@@ -1,0 +1,24 @@
+# Campaign-level settings for the v2 copy of 2.1.
+
+[campaign]
+name = "21_classic_no_reg_v2"
+results_dir = "outputs/results"
+
+[run]
+epochs_adam = 20
+epochs_linesearch = 30
+
+rgi_ids = [
+  "RGI60-11.02072",
+  "RGI60-11.02773",
+  "RGI60-11.02249",
+  "RGI60-11.00746",
+]
+
+[model]
+invert_target = "A"
+law_A = "TemperateA"
+
+[simulation]
+spinup = true
+spinup_tspan = [2009.0, 2010.0]

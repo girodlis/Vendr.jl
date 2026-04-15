@@ -1,0 +1,33 @@
+# Explicit scenario list for the v2 copy of 2.1.
+
+[[scenarios]]
+id = "S1"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S2"
+loss_type = "H"
+use_tim = true
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S4"
+loss_type = "H"
+use_tim = false
+sparsity_H = true
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S3"
+loss_type = "H"
+use_tim = true
+sparsity_H = true
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
