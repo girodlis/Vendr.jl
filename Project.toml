@@ -1,0 +1,28 @@
+name = "Vendr"
+uuid = "9c18c3fb-a958-4346-8538-dfda876d9043"
+authors = ["Lisa Girod"]
+version = "0.0.1"
+
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Huginn = "9cb796e9-d0ea-421b-b37d-eb97bc1add55"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+Muninn = "4b816528-16ba-4e32-9a2e-3c1bc2049d3a"
+ODINN = "c36d5296-eba1-40be-a153-0a8fa632a659"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+Sleipnir = "f5e6c550-199f-11ee-3608-394420200519"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
+
+[compat]
+JLD2 = "0.6.4"
+Revise = "3.7.5"
