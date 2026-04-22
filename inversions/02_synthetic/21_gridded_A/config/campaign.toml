@@ -19,7 +19,6 @@ law_A = "CuffeyPatersonGridded"
 
 [simulation]
 tspan = [2010.0, 2011.0]
-spinup = true
-spinup_tspan = [2009.0, 2010.0]
+spinup = false
 step = 0.08333333333333333  # 1/12 for monthly
-step_gt = 1.0
+step_gt = 0.08333333333333333 # to avoid use spinup

@@ -42,9 +42,10 @@ for (i, scenario) in enumerate(scenarios)
             test_mode = false,
             multiprocessing = true,
             workers = 4,
-            use_glathida_data = true,
+            #TODO: warning not able to use glthida data when downscale
+            #use_glathida_data = true,
             #TODO: issue to get grid scaled velocity data
-            #gridScalingFactor = 4,
+            gridScalingFactor = 4,
             rgi_paths = rgi_paths,
         ),
         hyper = Hyperparameters(
@@ -65,14 +66,7 @@ for (i, scenario) in enumerate(scenarios)
         ),
     )
 
-    # 3) si spinup -> spinup
-    if campaign.spinup
-        println("Spinup enabled (applied in synthetic GT generation).")
-    else
-        println("Spinup disabled.")
-    end
-
-    # 4) synthetic -> generate GT ; observed -> recover data
+    # 4) synthetic -> generate GT (with or without spinup)
     prediction = build_ground_truth(campaign, scenario, params)
     glaciers = prediction.glaciers
 
@@ -109,10 +103,10 @@ for (i, scenario) in enumerate(scenarios)
         if should_restore_references
             restore_unmasked_references!(glacier_result, unmasked_references)
         end
-        push!(context.scenario_results_by_glacier[glacier_result.rgi_id], glacier_result)
+        push!(scenario_results_by_glacier[glacier_result.rgi_id], glacier_result)
     end
 
-    push!(context.scenario_labels, scenario_label(scenario_idx, scenario))
+    push!(scenario_labels, scenario_label(i, scenario))
 end
 
 # ##############################################
@@ -122,8 +116,15 @@ end
 print_summary(csv_file)
 
 save_comparison_grids!(;
-        rgi_ids = context.campaign.rgi_ids,
-        scenario_results_by_glacier = context.scenario_results_by_glacier,
-        scenario_labels = context.scenario_labels,
-        results_dir = context.results_dir,
+        rgi_ids = campaign.rgi_ids,
+        scenario_results_by_glacier = scenario_results_by_glacier,
+        scenario_labels = scenario_labels,
+        results_dir = results_dir,
     )
+
+plot_relative_error_boxplot(
+    csv_path = csv_file,
+    output_path = joinpath(results_dir, "temperate_ice_absolute_relative_error_log_boxplot.png"),
+    log_scale = true,
+    use_absolute_error = true,
+)
