@@ -82,7 +82,7 @@ function build_ground_truth(
     A_gt = resolve_law_A(campaign, params; mode = :ground_truth)
     C_gt = resolve_law_C(campaign, params)
 
-     MB_model = scenario.use_tim ?
+    MB_model = scenario.use_tim ?
         mass_balance = TImodel1(
             params; DDF = 6.0/1000.0,
             acc_factor = 1.2/1000.0

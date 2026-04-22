@@ -210,7 +210,7 @@ Checks:
 - `ErrorException`: If configuration is invalid
 """
 function validate_campaign(campaign::CampaignConfig)::Nothing
-    campaign.invert_target == :A || error(
+    campaign.invert_target in (:A) || error(
         "v1 currently supports invert_target = :A only (got $(campaign.invert_target)). "
     )
     campaign.law_A in (:TemperateA, :CuffeyPatersonScalar, :CuffeyPatersonGridded) || error(

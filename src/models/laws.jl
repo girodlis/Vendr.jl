@@ -32,7 +32,8 @@ Instantiate fixed law C for ground truth generation.
 """
 function resolve_law_C(campaign::CampaignConfig, params)
     if campaign.law_C == :SyntheticC
-        return SyntheticC(params)
+        law_inputs = (; CPDD = iCPDD(), topo_roughness = iTopoRough())
+        return SyntheticC(params; inputs = law_inputs)
     elseif campaign.law_C == :None
         return nothing
     else

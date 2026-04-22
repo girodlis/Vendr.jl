@@ -27,7 +27,9 @@ function plot_relative_error_boxplot(;
     hasproperty(df, :use_tim) || error("Missing column: use_tim")
     hasproperty(df, :relative_error_percent) || error("Missing column: relative_error_percent")
 
-    df.scenario_label = string.(df.scenario) .* " | " .* df.loss_type .* " | tim=" .* string.(df.use_tim)
+    df.scenario_label = string.(df.loss_type) .* " | tim=" .* string.(df.use_tim) .* 
+                            " | H=" .* string.(df.sparsity_H) .* " | Vσ=" .* string.(df.sparsity_V_sigma) .* 
+                            " | Vthr=" .* string.(df.sparsity_V_threshold)
     error_values = use_absolute_error ? abs.(df.relative_error_percent) : df.relative_error_percent
 
     scenario_labels = unique(df.scenario_label)
