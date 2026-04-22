@@ -1,4 +1,4 @@
-# Explicit scenario list for the v2 copy of 2.1.
+# Auto-generated 24 scenarios
 
 [[scenarios]]
 id = "S1"
@@ -10,8 +10,16 @@ sparsity_V_threshold = 0.0
 
 [[scenarios]]
 id = "S2"
-loss_type = "H"
-use_tim = true
+loss_type = "V"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S3"
+loss_type = "HV"
+use_tim = false
 sparsity_H = false
 sparsity_V_sigma = 0.0
 sparsity_V_threshold = 0.0
@@ -20,14 +28,167 @@ sparsity_V_threshold = 0.0
 id = "S4"
 loss_type = "H"
 use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S5"
+loss_type = "V"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S6"
+loss_type = "HV"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S7"
+loss_type = "H"
+use_tim = false
 sparsity_H = true
 sparsity_V_sigma = 0.0
 sparsity_V_threshold = 0.0
 
 [[scenarios]]
-id = "S3"
+id = "S8"
+loss_type = "V"
+use_tim = false
+sparsity_H = true
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S9"
+loss_type = "HV"
+use_tim = false
+sparsity_H = true
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S10"
+loss_type = "H"
+use_tim = false
+sparsity_H = true
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S11"
+loss_type = "V"
+use_tim = false
+sparsity_H = true
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S12"
+loss_type = "HV"
+use_tim = false
+sparsity_H = true
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S13"
+loss_type = "H"
+use_tim = true
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S14"
+loss_type = "V"
+use_tim = true
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S15"
+loss_type = "HV"
+use_tim = true
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S16"
+loss_type = "H"
+use_tim = true
+sparsity_H = false
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S17"
+loss_type = "V"
+use_tim = true
+sparsity_H = false
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S18"
+loss_type = "HV"
+use_tim = true
+sparsity_H = false
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S19"
 loss_type = "H"
 use_tim = true
 sparsity_H = true
 sparsity_V_sigma = 0.0
 sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S20"
+loss_type = "V"
+use_tim = true
+sparsity_H = true
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S21"
+loss_type = "HV"
+use_tim = true
+sparsity_H = true
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+
+[[scenarios]]
+id = "S22"
+loss_type = "H"
+use_tim = true
+sparsity_H = true
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S23"
+loss_type = "V"
+use_tim = true
+sparsity_H = true
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+
+[[scenarios]]
+id = "S24"
+loss_type = "HV"
+use_tim = true
+sparsity_H = true
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
+

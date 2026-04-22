@@ -1,8 +1,9 @@
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 ODINN = "c36d5296-eba1-40be-a153-0a8fa632a659"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Sleipnir = "f5e6c550-199f-11ee-3608-394420200519"
 Vendr = "9c18c3fb-a958-4346-8538-dfda876d9043"
 
 [sources]
-Vendr = { path = "../../.." }
+Vendr = {path = "../../.."}
