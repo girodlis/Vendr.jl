@@ -1,0 +1,25 @@
+[campaign]
+name = "21_gridded_A"
+results_dir = "outputs/results"
+
+[run]
+epochs_adam = 20
+epochs_linesearch = 30
+
+rgi_ids = [
+  "RGI60-11.02072",
+  "RGI60-11.02773",
+  "RGI60-11.02249",
+  "RGI60-11.00746",
+]
+
+[model]
+invert_target = "A"
+law_A = "CuffeyPatersonGridded"
+
+[simulation]
+tspan = [2010.0, 2011.0]
+spinup = true
+spinup_tspan = [2009.0, 2010.0]
+step = 0.08333333333333333  # 1/12 for monthly
+step_gt = 1.0

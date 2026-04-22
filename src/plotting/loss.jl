@@ -6,7 +6,7 @@ can be migrated more easily in the future.
 """
 
 """
-    plot_losses(inversion, n_epochs_adam;
+    plot_loss_evolution(inversion, n_epochs_adam;
         scenario_id,
         results_dir=".",
         loss_type=nothing,
@@ -18,7 +18,7 @@ can be migrated more easily in the future.
 Plot the loss evolution and save one PNG per scenario.
 The output file is written in `results_dir` with a scenario-specific name.
 """
-function plot_losses(;
+function plot_loss_evolution(;
         inversion::Inversion,
         n_epochs_adam::Int = 2,
         scenario_id::Int = 1,
@@ -163,9 +163,10 @@ function plot_losses(;
     isdir(results_dir) || mkpath(results_dir)
     output_path = joinpath(results_dir, "loss_evolution_scenario$(scenario_id)$(suffix).png")
     Plots.savefig(p, output_path)
-    @info "Plot saved to: $(output_path)"
     return output_path
 end
+
+
 
 function _build_loss_suffix(loss_type, use_tim, sparsity_H, sparsity_V_sigma, sparsity_V_threshold)
     suffix = ""

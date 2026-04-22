@@ -1,10 +1,3 @@
-"""
-Entry point for the v2 synthetic inversion campaign.
-
-Uses the generic campaign orchestration library from Vendr.jl.
-This script can serve as a template for other campaigns.
-"""
-
 using Revise
 using Vendr
 using ODINN
@@ -16,6 +9,13 @@ campaign_root = dirname(abspath(@__FILE__))
 # Load campaign config and scenarios from campaign_root/config/
 context = build_campaign_run_context(campaign_root)
 
-# Run all scenarios
 run_campaign!(context)
 
+print_summary(context.csv_file)
+
+plot_relative_error_boxplot(
+    csv_path = context.csv_file,
+    output_path = joinpath(context.results_dir, "temperate_ice_absolute_relative_error_log_boxplot.png"),
+    log_scale = true,
+    use_absolute_error = true,
+)
