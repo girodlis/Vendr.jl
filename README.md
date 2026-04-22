@@ -2,6 +2,21 @@
 
 A Julia package to run glacier inversion campaigns with ODINN.jl.
 
+## Compact Run Workflow
+
+```mermaid
+flowchart LR
+    A[run.jl] --> B[Load config]
+    B --> C[Build campaign context]
+    C --> D[Loop scenarios]
+    D --> E[Prepare setup]
+    E --> F[Run inversion]
+    F --> G[Save scenario outputs]
+    G --> D
+    D -->|done| H[Build campaign summary]
+    H --> I[(outputs/results)]
+```
+
 ## Quick Start
 
 Run a campaign from its folder:
@@ -16,7 +31,7 @@ julia --project=. run.jl
 - Inversion target: `A` (scalar)
 - Data mode: synthetic ground truth
 - Time mode: short non-transient setup (`2010:2011`)
-- Campaign orchestration: generic API in `src/campaign/`
+- Campaign orchestration: generic API in `src/config/` + `src/simulations/`
 
 ## Main API
 
