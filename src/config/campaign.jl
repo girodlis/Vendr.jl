@@ -52,6 +52,7 @@ Base.@kwdef struct CampaignConfig
     name::String
     results_dir::String
     rgi_ids::Vector{String}
+    gridScalingFactor::Int
     epochs_adam::Int
     epochs_linesearch::Int
     invert_target::Symbol
@@ -167,6 +168,8 @@ function load_campaign_config(
     # TODO: default to SyntheticC once C inversion path is implemented.
     law_C = Symbol(String(get(model_section, "law_C", "None")))
 
+    gridScalingFactor = Int(get(simulation_section, "gridScalingFactor", 1))
+
     tspan = _as_tspan(get(simulation_section, "tspan", nothing), (2010.0, 2011.0); key = "tspan")
 
     step = Float64(get(simulation_section, "step", 1/12))
@@ -183,6 +186,7 @@ function load_campaign_config(
         name = name,
         results_dir = results_dir,
         rgi_ids = rgi_ids,
+        gridScalingFactor = gridScalingFactor,
         epochs_adam = epochs_adam,
         epochs_linesearch = epochs_linesearch,
         invert_target = invert_target,
