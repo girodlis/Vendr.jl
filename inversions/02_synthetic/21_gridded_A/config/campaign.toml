@@ -1,6 +1,6 @@
 [campaign]
 name = "21_gridded_A"
-results_dir = "outputs/results"
+results_dir = "outputs/results4"
 
 [run]
 epochs_adam = 20
@@ -18,7 +18,9 @@ invert_target = "A"
 law_A = "CuffeyPatersonGridded"
 
 [simulation]
+gridScalingFactor = 2  # Spatial resolution downsampling for gridded A inversion
 tspan = [2010.0, 2011.0]
-spinup = false
+spinup = true
+spinup_tspan = [2009.0, 2010.0]
 step = 0.08333333333333333  # 1/12 for monthly
-step_gt = 0.08333333333333333 # to avoid use spinup
+step_gt = 1.0

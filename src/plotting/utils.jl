@@ -50,19 +50,3 @@ function _max_abs_finite(values)
     end
     return limit, found_finite
 end
-
-function _pick_state(data, idx, context::AbstractString)
-    data isa AbstractVector || return data
-
-    n = length(data)
-    n > 0 || error("Encountered an empty time series in $(context)")
-
-    selected_idx = isnothing(idx) ? n : idx
-    1 <= selected_idx <= n || error("timeIdx=$(selected_idx) is out of bounds for a series of length $(n) in $(context)")
-    return data[selected_idx]
-end
-
-function _thickness_reference(results::Sleipnir.Results, timeIdx::Union{Nothing, Int64}; prefer_unmasked::Bool = true)
-    _ = prefer_unmasked
-    return _pick_state(results.H_ref, timeIdx, "plot_thickness_differences_grid")
-end

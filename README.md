@@ -1,8 +1,31 @@
 # Vendr.jl
 
-A Julia package to run glacier inversion campaigns with ODINN.jl.
+A Julia package to orchestrate glacier inversion campaigns using the ODINN.jl ecosystem.
 
-## Compact Run Workflow
+## Quick Start
+
+All campaigns use the **single `Project.toml` at the root** (`../../../`). You can run from either location:
+
+### Option 1: From the campaign directory
+```bash
+cd inversions/02_synthetic/21_autoAD
+julia --project=../../../ run.jl
+```
+
+### Option 2: From Vendr.jl root
+```bash
+julia --project=. inversions/02_synthetic/21_autoAD/run.jl
+```
+
+## Campaign Structure
+
+Each campaign directory contains:
+- `config/` - TOML configuration files (`campaign.toml`, `scenarios.toml`)
+- `data/` - Campaign-specific data
+- `outputs/` - Results and logs
+- `run.jl` - Main execution script
+
+### Compact Run Workflow
 
 ```mermaid
 flowchart LR
@@ -15,15 +38,6 @@ flowchart LR
     G --> D
     D -->|done| H[Build campaign summary]
     H --> I[(outputs/results)]
-```
-
-## Quick Start
-
-Run a campaign from its folder:
-
-```bash
-cd inversions/02_synthetic/21_classic_no_reg
-julia --project=. run.jl
 ```
 
 ## Current Scope (v1)
@@ -41,8 +55,8 @@ julia --project=. run.jl
 
 The code contains explicit `TODO:` comments for planned extensions:
 
-- trainable `C` target
-- transient configuration
-- observed-data mode (without synthetic ground truth generation)
-- target-aware metrics and plots (`A` vs `C`)
-- distributed `A` and field-based error analysis
+- Trainable `C` (creep parameter) target
+- Transient configuration (longer time periods)
+- Observed-data mode (without synthetic ground truth generation)
+- Target-aware metrics and plots (`A` vs `C`)
+- Distributed `A` and field-based error analysis

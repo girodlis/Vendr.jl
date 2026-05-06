@@ -85,11 +85,26 @@ end
 
 function save_comparison_grids!(;
     rgi_ids::Vector{String},
-    scenario_results_by_glacier::Dict,
-    scenario_labels::Vector{String},
     results_dir::String,
+    scenarios::Vector{ScenarioConfig},
+    scenario_inversions::Union{Vector, Nothing} = nothing,
+    scenario_predictions::Union{Vector, Nothing} = nothing,
 )
-    for rgi_id in rgi_ids
+    # Derive scenario_results_by_glacier on-demand from scenario_inversions
+    scenario_results_by_glacier = Dict(rgi_id => Sleipnir.Results[] for rgi_id in rgi_ids)
+    if !isnothing(scenario_inversions)
+        for inversion in scenario_inversions
+            for glacier_result in inversion.results.simulation
+                push!(scenario_results_by_glacier[glacier_result.rgi_id], glacier_result)
+            end
+        end
+    end
+    
+    # Generate scenario_labels on-demand from scenarios
+    scenario_labels = [scenario_label(i, scenario) for (i, scenario) in enumerate(scenarios)]
+    
+    # Save thickness grids
+    for (i, rgi_id) in enumerate(rgi_ids)
         scenario_results = scenario_results_by_glacier[rgi_id]
         isempty(scenario_results) && continue
 
@@ -100,6 +115,24 @@ function save_comparison_grids!(;
             plotContour = true,
         )
         save(joinpath(results_dir, "thickness_differences_grid_$(rgi_id).png"), thickness_grid)
+    end
+
+    # Save target grids if provided
+    if !isnothing(scenario_inversions) && !isnothing(scenario_predictions)
+        for (i, rgi_id) in enumerate(rgi_ids)
+            scenario_results = scenario_results_by_glacier[rgi_id]
+            isempty(scenario_results) && continue
+
+            target_grid = plot_target_difference_grid(
+                scenario_inversions,
+                scenario_predictions,
+                i,
+                :A,
+                scenario_labels;
+                relative_error = true,
+            )
+            save(joinpath(results_dir, "target_differences_grid_$(rgi_id).png"), target_grid)
+        end
     end
 
     return nothing

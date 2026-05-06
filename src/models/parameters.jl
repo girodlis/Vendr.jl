@@ -12,6 +12,7 @@ UDE and solver settings.
 """
 function build_parameters(campaign::CampaignConfig, scenario::ScenarioConfig)::Sleipnir.Parameters
     rgi_paths = get_rgi_paths()
+    use_glathida = campaign.gridScalingFactor > 1 ? false : true # TODO: warning not able to use glathida data when downscale
 
     return Parameters(
         simulation = SimulationParameters(
@@ -20,8 +21,8 @@ function build_parameters(campaign::CampaignConfig, scenario::ScenarioConfig)::S
             test_mode = false,
             multiprocessing = true,
             workers = 4,
-            use_glathida_data = true,
-            #gridScalingFactor = 4,
+            use_glathida_data = use_glathida,
+            gridScalingFactor = campaign.gridScalingFactor,
             rgi_paths = rgi_paths,
         ),
         hyper = Hyperparameters(
@@ -36,7 +37,7 @@ function build_parameters(campaign::CampaignConfig, scenario::ScenarioConfig)::S
             minA = 8e-19,
             maxA = 8e-15,
         ),
-        UDE = resolve_autoAD(scenario),
+        UDE = resolve_UDE_params(scenario),
         solver = Huginn.SolverParameters(
             step = campaign.step,
         ),
@@ -71,10 +72,12 @@ function resolve_loss(scenario::ScenarioConfig)::Union{LossH, LossV, LossHV}
     end
 end
 
-function resolve_autoAD(scenario::ScenarioConfig)
+
+function resolve_UDE_params(scenario::ScenarioConfig)
     if scenario.use_optim_autoAD
         return UDEparameters(
-            # ADTypes.AutoEnzyme()
+            optim_autoAD = ODINN.Optimization.AutoZygote(),
+            grad = ODINN.SciMLSensitivityAdjoint(),
             empirical_loss_function = resolve_loss(scenario),
         )
     else

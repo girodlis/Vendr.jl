@@ -3,8 +3,8 @@
 
 Run one inversion scenario and append results to campaign context.
 
-Prepares models, runs the inversion, saves results, and aggregates them
-into the campaign-level results dictionary.
+Prepares models, runs the inversion, saves results, and stores inversion/prediction
+in the campaign context for later analysis.
 
 # Arguments
 - `context::CampaignRunContext`: Campaign execution context
@@ -12,8 +12,8 @@ into the campaign-level results dictionary.
 - `scenario_idx::Int`: Scenario index (1-based, for logging)
 
 # Side Effects
-- Modifies context.scenario_results_by_glacier (appends results)
 - Appends rows to context.csv_file (first scenario overwrites)
+- Stores inversion and prediction in context
 """
 function run_scenario!(context::CampaignRunContext, scenario::ScenarioConfig, scenario_idx::Int)::Nothing
     inv_model, glaciers, params, unmasked_references, prediction = prepare_scenario(context.campaign, scenario)
@@ -42,10 +42,10 @@ function run_scenario!(context::CampaignRunContext, scenario::ScenarioConfig, sc
         if should_restore_references
             restore_unmasked_references!(glacier_result, unmasked_references)
         end
-        push!(context.scenario_results_by_glacier[glacier_result.rgi_id], glacier_result)
     end
 
-    push!(context.scenario_labels, scenario_label(scenario_idx, scenario))
+    push!(context.scenario_inversions, inversion)
+    push!(context.scenario_predictions, prediction)
     return nothing
 end
 
@@ -75,9 +75,10 @@ function run_campaign!(context::CampaignRunContext)::CampaignRunContext
 
     save_comparison_grids!(;
         rgi_ids = context.campaign.rgi_ids,
-        scenario_results_by_glacier = context.scenario_results_by_glacier,
-        scenario_labels = context.scenario_labels,
         results_dir = context.results_dir,
+        scenarios = context.scenarios,
+        scenario_inversions = context.scenario_inversions,
+        scenario_predictions = context.scenario_predictions,
     )
     
     return context

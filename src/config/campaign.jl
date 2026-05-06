@@ -1,5 +1,4 @@
 using TOML
-using Sleipnir
 
 """
     ScenarioConfig
@@ -71,8 +70,8 @@ Base.@kwdef struct CampaignRunContext
     campaign_root::String
     results_dir::String
     csv_file::String
-    scenario_results_by_glacier::Dict{String, Vector{Sleipnir.Results}}
-    scenario_labels::Vector{String}
+    scenario_inversions::Vector  # Vector{Inversion}
+    scenario_predictions::Vector  # Vector{Prediction}
     n_epochs_adam::Int
     n_epochs_linesearch::Int
 end
@@ -253,7 +252,7 @@ function _scenario_from_dict(entry::Dict{String, Any}, fallback_id::String, fall
         sparsity_H = Bool(get(entry, "sparsity_H", false)),
         sparsity_V_sigma = Float64(get(entry, "sparsity_V_sigma", 0.0)),
         sparsity_V_threshold = Float64(get(entry, "sparsity_V_threshold", 0.0)),
-        use_optim_autoAD = Bool(get(entry, "use_optim_autoAD", true)),
+        use_optim_autoAD = Bool(get(entry, "use_optim_autoAD", false)),
         rgi_ids = haskey(entry, "rgi_ids") ? String.(entry["rgi_ids"]) : fallback_rgi_ids,
     )
 end
@@ -330,8 +329,8 @@ function build_campaign_run_context(
     isdir(results_dir) || mkpath(results_dir)
     csv_file = joinpath(results_dir, "campaign_summary.csv")
 
-    scenario_results_by_glacier = Dict(rgi_id => Sleipnir.Results[] for rgi_id in campaign.rgi_ids)
-    scenario_labels = String[]
+    scenario_inversions = []
+    scenario_predictions = []
 
     return CampaignRunContext(
         campaign = campaign,
@@ -339,8 +338,8 @@ function build_campaign_run_context(
         campaign_root = campaign_root,
         results_dir = results_dir,
         csv_file = csv_file,
-        scenario_results_by_glacier = scenario_results_by_glacier,
-        scenario_labels = scenario_labels,
+        scenario_inversions = scenario_inversions,
+        scenario_predictions = scenario_predictions,
         n_epochs_adam = campaign.epochs_adam,
         n_epochs_linesearch = campaign.epochs_linesearch,
     )

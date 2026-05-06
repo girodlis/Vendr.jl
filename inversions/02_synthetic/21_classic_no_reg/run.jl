@@ -1,7 +1,8 @@
 using Revise
+cd(@__DIR__)
+
 using Vendr
-using ODINN
-using Sleipnir
+using ODINN  # Already reexports Sleipnir
 
 # Campaign root is the current directory (path of this script)
 campaign_root = dirname(abspath(@__FILE__))

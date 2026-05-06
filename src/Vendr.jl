@@ -44,10 +44,8 @@ module Vendr
 # ##############################################
 
 # ODINN subpackages
-using Sleipnir
-using Muninn
-using Huginn
-using ODINN
+using Reexport
+@reexport using ODINN # imports Muninn and Sleipnir
 
 # Utilities
 using JLD2
@@ -143,6 +141,8 @@ export compute_relative_error,
 export plot_loss_evolution,
        plot_losses,
        plot_relative_error_boxplot,
-       plot_thickness_differences_grid
+       plot_thickness_differences_grid,
+       plot_target_difference_grid,
+       plot_target_comparison
 
 end # module

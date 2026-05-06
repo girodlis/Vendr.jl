@@ -1,6 +1,6 @@
 [campaign]
 name = "21_classic_no_reg"
-results_dir = "outputs/results2"
+results_dir = "outputs/results"
 
 [run]
 epochs_adam = 20
