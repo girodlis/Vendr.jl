@@ -1,0 +1,182 @@
+# Auto-generated scenarios
+
+[[scenarios]]
+id = "S1"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 1.0e37
+
+[[scenarios]]
+id = "S2"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 1.2742749857031425e37
+
+[[scenarios]]
+id = "S3"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 1.6237767391887176e37
+
+[[scenarios]]
+id = "S4"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 2.0691380811147986e37
+
+[[scenarios]]
+id = "S5"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 2.6366508987303446e37
+
+[[scenarios]]
+id = "S6"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 3.359818286283788e37
+
+[[scenarios]]
+id = "S7"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 4.28133239871936e37
+
+[[scenarios]]
+id = "S8"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 5.455594781168514e37
+
+[[scenarios]]
+id = "S9"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 6.951927961775648e37
+
+[[scenarios]]
+id = "S10"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 8.858667904100796e37
+
+[[scenarios]]
+id = "S11"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 1.128837891684693e38
+
+[[scenarios]]
+id = "S12"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 1.438449888287654e38
+
+[[scenarios]]
+id = "S13"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 1.8329807108324374e38
+
+[[scenarios]]
+id = "S14"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 2.3357214690901404e38
+
+[[scenarios]]
+id = "S15"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 2.976351441631313e38
+
+[[scenarios]]
+id = "S16"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 3.7926901907322696e38
+
+[[scenarios]]
+id = "S17"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 4.832930238571732e38
+
+[[scenarios]]
+id = "S18"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 6.15848211066028e38
+
+[[scenarios]]
+id = "S19"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 7.847599703514559e38
+
+[[scenarios]]
+id = "S20"
+loss_type = "H"
+use_tim = false
+sparsity_H = false
+sparsity_V_sigma = 0.0
+sparsity_V_threshold = 0.0
+regularization_weight = 1.0e39
+
