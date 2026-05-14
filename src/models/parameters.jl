@@ -13,6 +13,7 @@ UDE and solver settings.
 function build_parameters(campaign::CampaignConfig, scenario::ScenarioConfig)::Sleipnir.Parameters
     rgi_paths = get_rgi_paths()
     use_glathida = campaign.gridScalingFactor > 1 ? false : true # TODO: warning not able to use glathida data when downscale
+    #use_glathida = true
 
     return Parameters(
         simulation = SimulationParameters(
@@ -34,8 +35,8 @@ function build_parameters(campaign::CampaignConfig, scenario::ScenarioConfig)::S
             ],
         ),
         physical = PhysicalParameters(
-            minA = 8e-19,
-            maxA = 8e-15,
+            minA = 1e-18, #8e-19,
+            maxA = 3e-16, #8e-15,
         ),
         UDE = resolve_UDE_params(scenario),
         solver = Huginn.SolverParameters(
@@ -57,18 +58,27 @@ Loss function object (LossH, LossV, or LossHV)
 # Throws
 - `ErrorException`: If loss_type is not one of "H", "V", "HV"
 """
-function resolve_loss(scenario::ScenarioConfig)::Union{LossH, LossV, LossHV}
+function resolve_loss(scenario::ScenarioConfig)::ODINN.AbstractLoss
     h_distance = scenario.sparsity_H ? 0 : 3
     h_loss = LossH(loss = L2Sum(distance = h_distance))
 
-    if scenario.loss_type == "H"
-        return h_loss
+    empirical = if scenario.loss_type == "H"
+        h_loss
     elseif scenario.loss_type == "V"
-        return LossV()
+        LossV()
     elseif scenario.loss_type == "HV"
-        return LossHV(hLoss = h_loss, vLoss = LossV())
+        LossHV(hLoss = h_loss, vLoss = LossV())
     else
         error("Unsupported loss_type=$(scenario.loss_type).")
+    end
+
+    if scenario.regularization_weight == 0.0
+        return empirical
+    else
+        return ODINN.MultiLoss(
+            losses = (empirical, ODINN.RheologyRegularization(),),
+            λs = (1.0, scenario.regularization_weight,)
+        )
     end
 end
 

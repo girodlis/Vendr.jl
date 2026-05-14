@@ -23,6 +23,7 @@ Base.@kwdef struct ScenarioConfig
     sparsity_V_sigma::Float64
     sparsity_V_threshold::Float64
     use_optim_autoAD::Bool = true
+    regularization_weight::Float64 = 0.0
     rgi_ids::Vector{String}
 end
 
@@ -200,32 +201,6 @@ function load_campaign_config(
 end
 
 """
-    validate_campaign(campaign::CampaignConfig) -> Nothing
-
-Validate campaign configuration for consistency and support in current package version.
-
-Checks:
-- `invert_target` is :A (v1 limitation)
-- `law_A` is one of supported options
-- `law_C` is one of supported options
-
-# Throws
-- `ErrorException`: If configuration is invalid
-"""
-function validate_campaign(campaign::CampaignConfig)::Nothing
-    campaign.invert_target == :A || error(
-        "v1 currently supports invert_target = :A only (got $(campaign.invert_target)). "
-    )
-    campaign.law_A in (:TemperateA, :CuffeyPatersonScalar, :CuffeyPatersonGridded) || error(
-        "Unsupported law_A=$(campaign.law_A). Choose from: :TemperateA, :CuffeyPatersonScalar, :CuffeyPatersonGridded"
-    )
-    campaign.law_C in (:SyntheticC, :None) || error(
-        "Unsupported law_C=$(campaign.law_C). Choose from: :SyntheticC, :None"
-    )
-    return nothing
-end
-
-"""
     generate_tstops_gt(campaign::CampaignConfig) -> Vector{Float64}
 
 Generate time stops for ground truth observations based on campaign config.
@@ -253,6 +228,7 @@ function _scenario_from_dict(entry::Dict{String, Any}, fallback_id::String, fall
         sparsity_V_sigma = Float64(get(entry, "sparsity_V_sigma", 0.0)),
         sparsity_V_threshold = Float64(get(entry, "sparsity_V_threshold", 0.0)),
         use_optim_autoAD = Bool(get(entry, "use_optim_autoAD", false)),
+        regularization_weight = Float64(get(entry, "regularization_weight", 0.0)),
         rgi_ids = haskey(entry, "rgi_ids") ? String.(entry["rgi_ids"]) : fallback_rgi_ids,
     )
 end
