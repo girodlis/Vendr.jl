@@ -13,7 +13,7 @@ Saves unmasked references for restoration after inversion.
 # Returns
 Tuple (glaciers, unmasked_references) where references are NamedTuple or nothing
 """
-function apply_masks(scenario::ScenarioConfig, glaciers)::Tuple
+function apply_masks(campaign::CampaignConfig, scenario::ScenarioConfig, glaciers)::Tuple
     unmasked_velocity_ref = Dict{String, Any}()
     unmasked_thickness_ref = Dict{String, Any}()
     applied_velocity_mask = false
@@ -53,6 +53,9 @@ function apply_masks(scenario::ScenarioConfig, glaciers)::Tuple
             unmasked_thickness_ref[glacier.rgi_id] = deepcopy(hdata.H)
             ntstops = length(hdata.H)
             glathida_mask = glacier.H_glathida .> 0.0
+            if campaign.gridScalingFactor > 1
+                glathida_mask = downscale_mask(glathida_mask, campaign.gridScalingFactor)
+            end
             for it in 1:ntstops
                 glacier.thicknessData.H[it] .*= glathida_mask
             end
@@ -81,8 +84,20 @@ function prepare_scenario(campaign::CampaignConfig, scenario::ScenarioConfig)
     params = build_parameters(campaign, scenario)
     prediction = build_ground_truth(campaign, scenario, params)
     glaciers = prediction.glaciers
-    glaciers, unmasked_references = apply_masks(scenario, glaciers)
+    glaciers, unmasked_references = apply_masks(campaign, scenario, glaciers)
     inv_model = build_inversion_model(campaign, scenario, params, glaciers)
     return inv_model, glaciers, params, unmasked_references, prediction
+end
+
+"""
+    downscale_mask(mask::BitMatrix, scaling_factor::Int) -> BitMatrix
+
+Downscale a binary mask using block averaging (same as for ice thickness).
+A downscaled cell is TRUE if >50% of its block is TRUE.
+"""
+function downscale_mask(mask::BitMatrix, scaling_factor::Int)::BitMatrix
+    mask_float = Float64.(mask)
+    mask_scaled = Sleipnir.block_average_pad_edge(mask_float, scaling_factor)
+    return BitMatrix(mask_scaled .> 0.5)
 end
 
