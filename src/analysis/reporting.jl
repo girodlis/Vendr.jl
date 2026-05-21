@@ -130,6 +130,7 @@ function save_comparison_grids!(;
                 :A,
                 scenario_labels;
                 relative_error = true,
+                results_dir = results_dir,
             )
             save(joinpath(results_dir, "target_differences_grid_$(rgi_id).png"), target_grid)
         end

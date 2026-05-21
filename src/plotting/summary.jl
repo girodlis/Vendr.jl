@@ -265,6 +265,7 @@ function plot_target_difference_grid(
         scale_text_size::Union{Nothing, Float64} = nothing,
         plotContour::Bool = true,
         relative_error::Bool = false,
+        results_dir::String = "outputs/results",
 )
     num_scenarios = length(inversions_vector)
     rows = clamp(round(Int, sqrt(num_scenarios)), 1, 3)
@@ -295,7 +296,6 @@ function plot_target_difference_grid(
     # Create mask with full glacier dimensions (using the correct glacier)
     glacier = predictions_vector[1].glaciers[glacier_idx]
     mask = Vendr._valid_domain_mask(glacier, glacier.H₀)
-    #mask = glacier.mask
     nx, ny = size(mask)
     
     # Verify mask matches expected full dimensions
@@ -337,7 +337,7 @@ function plot_target_difference_grid(
 
         # Generate comparison plot for this scenario
         target_comp = plot_target_comparison(inv_target, gt_target, inversion.results.simulation[glacier_idx]; colormap=:RdBu_11, plotContour=plotContour)
-        save(joinpath("outputs", "results", "target_comparison_$(rgi_id)_scenario_$(i).png"), target_comp)
+        save(joinpath(results_dir, "target_comparison_$(rgi_id)_scenario_$(i).png"), target_comp)
         
         # Check dimensions match mask
         size(inv_target) == size(mask) || 
@@ -498,6 +498,8 @@ function plot_target_comparison(
 
     # Use stable glacier mask from observations (not optimized initial thickness)
     mask = results.H_ref[end] .> 0.0
+    H_thin = results.H_ref[end] .< 1.0 # H < 1m
+    ctr_thin = Sleipnir.Contour.contour(collect(1:size(H_thin, 1)), 1 .+ size(H_thin, 2) .- collect(1:size(H_thin, 2)), H_thin, 0.5)
     
     # Handle dimension mismatch: pad target data if needed
     # Target parameters are often one dimension smaller than the full domain
@@ -546,6 +548,10 @@ function plot_target_comparison(
             lines!(ax1, first.(curve.vertices), last.(curve.vertices), color = :black, linewidth = 1, alpha = 0.3)
         end
     end
+
+    for curve in ctr_thin.lines
+        lines!(ax1, first.(curve.vertices), last.(curve.vertices), color = :red, linewidth = 2, alpha = 0.7)
+    end
     
     # Right: Ground Truth
     ax2 = Axis(fig[1, 2], aspect = DataAspect())
@@ -564,6 +570,157 @@ function plot_target_comparison(
     
     Colorbar(fig[1, 3], hm1; label = "log₁₀(value)")
     fig[0, :] = Label(fig, "$rgi_id", fontsize = 14, font = :bold)
+    
+    return fig
+end
+
+"""
+    plot_all_scenarios_with_ground_truth(inversions_vector, predictions_vector, glacier_idx, target, scenario_names; kwargs...) -> Figure
+
+Plot ground truth alongside a grid of all inverted target parameters for multiple scenarios.
+
+Layout:
+- Left: Ground Truth (full height, large)
+- Right: Grid of inverted parameters from all scenarios
+
+# Arguments
+- `inversions_vector::Vector`: Array of ODINN.Inversion objects, one per scenario
+- `predictions_vector::Vector`: Array of ground truth simulations, one per scenario
+- `glacier_idx::Int`: Index of glacier to plot (1-4)
+- `target::Symbol`: Target parameter to plot (:A or :C)
+- `scenario_names::Vector{String}`: Names for each scenario
+- `figsize::Union{Nothing, Tuple{Int,Int}}`: Figure size (default auto)
+- `plotContour::Bool`: Plot glacier contour (default true)
+- `colormap`: Colormap to use (default :YlGnBu)
+
+# Returns
+Figure object with ground truth on left and grid of scenarios on right
+"""
+function plot_all_scenarios_with_ground_truth(
+        inversions_vector::Vector,
+        predictions_vector::Vector,
+        glacier_idx::Int,
+        target::Symbol,
+        scenario_names::Vector{String};
+        figsize::Union{Nothing, Tuple{Int64, Int64}} = nothing,
+        plotContour::Bool = true,
+        colormap = :RdBu_11,
+)
+    num_scenarios = length(inversions_vector)
+    
+    # Determine grid layout for scenarios (cols x rows, on the right side)
+    scenario_cols = ceil(Int, sqrt(num_scenarios))
+    scenario_rows = ceil(Int, num_scenarios / scenario_cols)
+
+    # Get glacier info from first prediction
+    glacier = predictions_vector[1].glaciers[glacier_idx]
+    rgi_id = glacier.rgi_id
+    x = glacier.Coords["lon"]
+    y = glacier.Coords["lat"]
+    
+    # Extract GT and first inverted to get dimensions
+    first_prediction = predictions_vector[1]
+    first_inversion = inversions_vector[1]
+    gt_target = Vendr._target_value(first_prediction, glacier_idx, target; θ=nothing)
+    first_inv_target = Vendr._target_value(first_inversion, glacier_idx, target; θ=first_inversion.results.stats.θ)
+    gt_target = gt_target isa Matrix ? gt_target : Array(gt_target)
+    first_inv_target = first_inv_target isa Matrix ? first_inv_target : Array(first_inv_target)
+    
+    interior_m, interior_n = size(gt_target)
+    full_m = interior_m + 1
+    full_n = interior_n + 1
+    
+    # Create mask
+    mask = Vendr._valid_domain_mask(glacier, glacier.H₀)
+    #mask = glacier.H₀ .> 0.0
+    nx, ny = size(mask)
+    
+    # Pad GT to full domain
+    gt_padded = fill(NaN, nx, ny)
+    gt_padded[1:interior_m, 1:interior_n] = gt_target
+    gt_masked = copy(gt_padded)
+    gt_masked[.!mask] .= NaN
+    
+    # Extract all inverted targets and compute global bounds
+    inv_targets = Vector{Matrix{Float64}}(undef, num_scenarios)
+    positive_values = Float64[]
+    
+    for (i, inversion) in enumerate(inversions_vector)
+        inv_target = Vendr._target_value(inversion, glacier_idx, target; θ=inversion.results.stats.θ)
+        inv_target = inv_target isa Matrix ? inv_target : Array(inv_target)
+        
+        if size(inv_target) != (nx, ny)
+            if size(inv_target) == (interior_m, interior_n)
+                padded_inv = fill(NaN, nx, ny)
+                padded_inv[1:interior_m, 1:interior_n] = inv_target
+                inv_target = padded_inv
+            else
+                inv_target = inv_target[1:min(size(inv_target, 1), nx), 1:min(size(inv_target, 2), ny)]
+            end
+        end
+        inv_target[.!mask] .= NaN
+        inv_targets[i] = inv_target
+        
+        # Collect positive values for global scaling
+        append!(positive_values, vec(inv_target[isfinite.(inv_target) .& (inv_target .> 0)]))
+    end
+    append!(positive_values, vec(gt_masked[isfinite.(gt_masked) .& (gt_masked .> 0)]))
+    
+    global_min = minimum(positive_values)
+    global_max = maximum(positive_values)
+    
+    ctr = plotContour ? Sleipnir.Contour.contour(collect(1:nx), 1 + ny .- collect(1:ny), mask, 0.5) : nothing
+    
+    # Figure layout: 1 left column (GT) + scenario_cols columns (scenarios)
+    # 1 row for top label + scenario_rows for content + 1 for colorbar
+    total_cols = 1 + scenario_cols
+    fig = Figure(size = isnothing(figsize) ? (400 + 350*scenario_cols, 400 + 350*scenario_rows) : figsize)
+    
+    # ============ LEFT: Ground Truth ============
+    ax_gt = Axis(fig[1:scenario_rows, 1], aspect = DataAspect(), title = "Ground Truth")
+    hm_gt = Makie.heatmap!(ax_gt, Sleipnir.reverseForHeatmap(gt_masked, x, y),
+                     colormap = colormap, colorrange = (global_min, global_max), colorscale = log10)
+    ax_gt.xlabel = "Lon"
+    ax_gt.ylabel = "Lat"
+    
+    if plotContour && !isnothing(ctr)
+        for curve in ctr.lines
+            lines!(ax_gt, first.(curve.vertices), last.(curve.vertices), color = :black, linewidth = 1.5, alpha = 0.4)
+        end
+    end
+    
+    # ============ RIGHT: Grid of all scenarios ============
+    reference_heatmap = nothing
+    for scenario_idx in 1:num_scenarios
+        row = div(scenario_idx - 1, scenario_cols) + 1
+        col = mod(scenario_idx - 1, scenario_cols) + 1
+        
+        ax_scenario = Axis(fig[row, col + 1], aspect = DataAspect(), 
+                          title = scenario_names[scenario_idx])
+        hm_scenario = Makie.heatmap!(ax_scenario, Sleipnir.reverseForHeatmap(inv_targets[scenario_idx], x, y),
+                               colormap = colormap, colorrange = (global_min, global_max), colorscale = log10)
+        
+        # Keep reference to first heatmap for colorbar
+        if scenario_idx == 1
+            reference_heatmap = hm_scenario
+        end
+        
+        ax_scenario.xlabel = "Lon"
+        ax_scenario.ylabel = row == 1 ? "Lat" : ""
+        
+        if row > 1
+            hideydecorations!(ax_scenario, grid = false)
+        end
+        
+        if plotContour && !isnothing(ctr)
+            for curve in ctr.lines
+                lines!(ax_scenario, first.(curve.vertices), last.(curve.vertices), 
+                      color = :black, linewidth = 1, alpha = 0.3)
+            end
+        end
+    end
+    Colorbar(fig[:, total_cols + 1], reference_heatmap; label = "log₁₀(value)")
+    fig[0, :] = Label(fig, "$rgi_id | $target", fontsize = 16, font = :bold)
     
     return fig
 end
