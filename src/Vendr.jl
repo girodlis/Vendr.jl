@@ -131,6 +131,7 @@ export run_scenario!,
 export compute_relative_error,
        relative_error_temperate_ice_percent,
        save_results_csv,
+       save_epoch_counts_csv,
        append_inversion_summary_csv,
        restore_unmasked_references!,
        save_comparison_grids!,
@@ -143,6 +144,7 @@ export plot_loss_evolution,
        plot_relative_error_boxplot,
        plot_thickness_differences_grid,
        plot_target_difference_grid,
-       plot_target_comparison
+       plot_target_comparison,
+       plot_all_scenarios_with_ground_truth
 
 end # module
