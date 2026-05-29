@@ -18,10 +18,11 @@ can be migrated more easily in the future.
 Plot the loss evolution and save one PNG per scenario.
 The output file is written in `results_dir` with a scenario-specific name.
 """
-function plot_loss_evolution(;
-        inversion::Inversion,
+function plot_loss_evolution(
+    inversion::Inversion;
         n_epochs_adam::Int = 2,
-        scenario_id::Int = 1,
+    scenario_id::Union{Int, AbstractString} = 1,
+    scenario_label::Union{Nothing, AbstractString} = nothing,
         results_dir::String = "outputs/results",
         loss_type::String = "H",
         use_tim::Bool = false,
@@ -38,7 +39,8 @@ function plot_loss_evolution(;
         error("plot_losses(log_scale=true) requires strictly positive losses. Found values <= 0.")
     end
 
-    plot_title = log_scale ? "Loss Evolution (log10) - Scenario $(scenario_id)" : "Loss Evolution - Scenario $(scenario_id)"
+    scenario_text = scenario_label === nothing ? string(scenario_id) : String(scenario_label)
+    plot_title = log_scale ? "Loss Evolution (log10) - $(scenario_text)" : "Loss Evolution - $(scenario_text)"
 
     p = Plots.plot(
         size = (1200, 750),
@@ -164,6 +166,68 @@ function plot_loss_evolution(;
     output_path = joinpath(results_dir, "loss_evolution_scenario$(scenario_id)$(suffix).png")
     Plots.savefig(p, output_path)
     return output_path
+end
+
+
+"""
+    plot_loss_evolution(scenario_inversions, scenarios;
+        results_dir="outputs/results",
+        n_epochs_adam=nothing,
+        scenario_labels=nothing,
+        log_scale=false,
+    )
+
+Plot the loss evolution for every scenario in a campaign/run.
+This is the preferred entry point when you already have `context.scenario_inversions`
+and `context.scenarios` available after a run.
+"""
+function plot_loss_evolution(
+        scenario_inversions::AbstractVector,
+        scenarios::AbstractVector;
+        results_dir::AbstractString = "outputs/results",
+        n_epochs_adam::Union{Int, Nothing} = nothing,
+        scenario_labels::Union{Nothing, AbstractVector{<:AbstractString}} = nothing,
+        log_scale::Bool = false,
+    )
+    length(scenario_inversions) == length(scenarios) || error("scenario_inversions and scenarios must have the same length")
+
+    output_paths = String[]
+    for (i, (inversion, scenario)) in enumerate(zip(scenario_inversions, scenarios))
+        label = scenario_labels === nothing ? scenario_label(i, scenario) : String(scenario_labels[i])
+        push!(output_paths, plot_loss_evolution(
+            inversion;
+            scenario_id = scenario.id,
+            scenario_label = label,
+            results_dir = results_dir,
+            n_epochs_adam = n_epochs_adam,
+            log_scale = log_scale,
+        ))
+    end
+
+    return output_paths
+end
+
+
+"""
+    plot_loss_evolution(context::CampaignRunContext; ...)
+
+Convenience wrapper for a completed run context.
+"""
+function plot_loss_evolution(
+        context::CampaignRunContext;
+        results_dir::AbstractString = context.results_dir,
+        n_epochs_adam::Union{Int, Nothing} = context.campaign.epochs_adam,
+        scenario_labels::Union{Nothing, AbstractVector{<:AbstractString}} = nothing,
+        log_scale::Bool = false,
+    )
+    return plot_loss_evolution(
+        context.scenario_inversions,
+        context.scenarios;
+        results_dir = results_dir,
+        n_epochs_adam = n_epochs_adam,
+        scenario_labels = scenario_labels,
+        log_scale = log_scale,
+    )
 end
 
 
