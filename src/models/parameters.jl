@@ -12,16 +12,16 @@ UDE and solver settings.
 """
 function build_parameters(campaign::CampaignConfig, scenario::ScenarioConfig)::Sleipnir.Parameters
     rgi_paths = get_rgi_paths()
-    use_glathida = campaign.gridScalingFactor > 1 ? false : true # TODO: warning not able to use glathida data when downscale
-    #use_glathida = true
+    #use_glathida = campaign.gridScalingFactor > 1 ? false : true # TODO: warning not able to use glathida data when downscale
+    use_glathida = true
 
     return Parameters(
         simulation = SimulationParameters(
             use_MB = scenario.use_tim,
             tspan = campaign.tspan,
             test_mode = false,
-            multiprocessing = true,
-            workers = 4,
+            #multiprocessing = true,
+            #workers = 4,
             use_glathida_data = use_glathida,
             gridScalingFactor = campaign.gridScalingFactor,
             rgi_paths = rgi_paths,
@@ -30,7 +30,7 @@ function build_parameters(campaign::CampaignConfig, scenario::ScenarioConfig)::S
             batch_size = length(scenario.rgi_ids),
             epochs = [campaign.epochs_adam, campaign.epochs_linesearch],
             optimizer = [
-                ODINN.Adam(0.01),
+                ODINN.Adam(0.09),
                 ODINN.LBFGS(linesearch = ODINN.LineSearches.BackTracking(iterations = 5)),
             ],
         ),
@@ -59,8 +59,8 @@ Loss function object (LossH, LossV, or LossHV)
 - `ErrorException`: If loss_type is not one of "H", "V", "HV"
 """
 function resolve_loss(scenario::ScenarioConfig)::ODINN.AbstractLoss
-    h_distance = scenario.sparsity_H ? 0 : 3
-    h_loss = LossH(loss = L2Sum(distance = h_distance))
+    #h_distance = scenario.sparsity_H ? 0 : 3
+    h_loss = LossH(loss = L2Sum(distance = 0))
 
     empirical = if scenario.loss_type == "H"
         h_loss
