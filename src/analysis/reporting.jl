@@ -2,6 +2,60 @@ using CSV
 using DataFrames
 
 """
+    save_epoch_counts_csv(context::CampaignRunContext;
+        csv_path=joinpath(context.results_dir, "epoch_counts.csv"),
+        n_epochs_adam=nothing,
+        overwrite=true,
+    ) -> String
+
+Save a CSV with the realized Adam/BFGS epoch counts for each scenario in a
+completed campaign run.
+
+The counts are inferred from the finished loss history of each inversion.
+`total_epochs` is the number of optimization updates, computed as
+`max(length(losses) - 1, 0)`.
+"""
+function save_epoch_counts_csv(
+        context::CampaignRunContext;
+        csv_path::AbstractString = joinpath(context.results_dir, "epoch_counts.csv"),
+        n_epochs_adam::Union{Int, Nothing} = nothing,
+        overwrite::Bool = true,
+    )::String
+    adam_target = something(n_epochs_adam, context.campaign.epochs_adam)
+    completed_scenarios = min(length(context.scenario_inversions), length(context.scenarios))
+    file_exists = isfile(csv_path)
+    mode = (overwrite || !file_exists) ? "w" : "a"
+    write_header = overwrite || !file_exists
+
+    open(csv_path, mode) do io
+        if write_header
+            println(io, "scenario,scenario_label,total_epochs,epoch_adam,epoch_bfgs,n_losses,status")
+        end
+
+        for i in 1:completed_scenarios
+            scenario = context.scenarios[i]
+            inversion = context.scenario_inversions[i]
+            losses = inversion.results.stats.losses
+            n_losses = length(losses)
+            total_epochs = max(n_losses - 1, 0)
+            epoch_adam = min(adam_target, total_epochs)
+            epoch_bfgs = max(total_epochs - epoch_adam, 0)
+            label = scenario_label(i, scenario)
+
+            println(io, join([scenario.id, label, string(total_epochs), string(epoch_adam), string(epoch_bfgs), string(n_losses), "completed"], ","))
+        end
+
+        for i in (completed_scenarios + 1):length(context.scenarios)
+            scenario = context.scenarios[i]
+            label = scenario_label(i, scenario)
+            println(io, join([scenario.id, label, "", "", "", "", "pending"], ","))
+        end
+    end
+
+    return csv_path
+end
+
+"""
     save_results_csv(
         csv_path::AbstractString,
         inversion,
@@ -107,7 +161,6 @@ function save_comparison_grids!(;
     for (i, rgi_id) in enumerate(rgi_ids)
         scenario_results = scenario_results_by_glacier[rgi_id]
         isempty(scenario_results) && continue
-
         thickness_grid = plot_thickness_differences_grid(
             scenario_results,
             scenario_labels;
@@ -122,7 +175,7 @@ function save_comparison_grids!(;
         for (i, rgi_id) in enumerate(rgi_ids)
             scenario_results = scenario_results_by_glacier[rgi_id]
             isempty(scenario_results) && continue
-
+            #TODO: plot target differences grid only when griddedA
             target_grid = plot_target_difference_grid(
                 scenario_inversions,
                 scenario_predictions,
