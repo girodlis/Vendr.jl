@@ -29,7 +29,7 @@ function save_epoch_counts_csv(
 
     open(csv_path, mode) do io
         if write_header
-            println(io, "scenario,scenario_label,total_epochs,epoch_adam,epoch_bfgs,n_losses,status")
+            println(io, "scenario,scenario_label,total_epochs,epoch_adam,epoch_bfgs,n_losses,loss_value,status")
         end
 
         for i in 1:completed_scenarios
@@ -41,14 +41,16 @@ function save_epoch_counts_csv(
             epoch_adam = min(adam_target, total_epochs)
             epoch_bfgs = max(total_epochs - epoch_adam, 0)
             label = scenario_label(i, scenario)
+            loss_value = n_losses > 0 ? losses[end] : NaN
 
-            println(io, join([scenario.id, label, string(total_epochs), string(epoch_adam), string(epoch_bfgs), string(n_losses), "completed"], ","))
+            println(io, join([scenario.id, label, string(total_epochs), string(epoch_adam), string(epoch_bfgs), string(n_losses), string(loss_value)], ","))
         end
 
         for i in (completed_scenarios + 1):length(context.scenarios)
             scenario = context.scenarios[i]
             label = scenario_label(i, scenario)
-            println(io, join([scenario.id, label, "", "", "", "", "pending"], ","))
+            loss_value = NaN
+            println(io, join([scenario.id, label, "", "", "", "", string(loss_value), "pending"], ","))
         end
     end
 
