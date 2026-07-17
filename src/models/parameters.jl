@@ -12,27 +12,32 @@ UDE and solver settings.
 """
 function build_parameters(campaign::CampaignConfig, scenario::ScenarioConfig)::Sleipnir.Parameters
     rgi_paths = get_rgi_paths()
-    #use_glathida = campaign.gridScalingFactor > 1 ? false : true # TODO: warning not able to use glathida data when downscale
-    use_glathida = true
 
     return Parameters(
         simulation = SimulationParameters(
             use_MB = scenario.use_tim,
+            step_MB = 1.0,
             tspan = campaign.tspan,
             test_mode = false,
-            #multiprocessing = true,
-            #workers = 4,
-            use_glathida_data = use_glathida,
+            multiprocessing = true,
+            workers = 4,
+            use_glathida_data = true, # /!\ Do a first run without downscale to download the grid and then run with downscale
             gridScalingFactor = campaign.gridScalingFactor,
             rgi_paths = rgi_paths,
         ),
         hyper = Hyperparameters(
             batch_size = length(scenario.rgi_ids),
+
+            #### Scalar
             epochs = [campaign.epochs_adam, campaign.epochs_linesearch],
             optimizer = [
-                ODINN.Adam(0.09),
-                ODINN.LBFGS(linesearch = ODINN.LineSearches.BackTracking(iterations = 5)),
+               ODINN.Adam(0.01),
+               ODINN.LBFGS(linesearch = ODINN.LineSearches.BackTracking(iterations = 5)),
             ],
+
+            #### Gridded
+            # epochs = campaign.epochs_linesearch,
+            # optimizer = ODINN.LBFGS(m = 400, linesearch = ODINN.LineSearches.StrongWolfe(c_2=0.1))
         ),
         physical = PhysicalParameters(
             minA = 1e-18, #8e-19,
@@ -93,6 +98,8 @@ function resolve_UDE_params(scenario::ScenarioConfig)
     else
         return UDEparameters(
             optim_autoAD = ODINN.NoAD(),
+            # Discrete for gridded
+            #grad = DiscreteAdjoint(),
             empirical_loss_function = resolve_loss(scenario),
         )
     end

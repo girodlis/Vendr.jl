@@ -157,10 +157,10 @@ function load_campaign_config(
     isempty(rgi_ids) && error("No RGI IDs specified in campaign configuration")
 
     epochs_adam = Int(get(run_section, "epochs_adam", 20))
-    epochs_adam > 0 || error("epochs_adam must be positive, got $epochs_adam")
+    #epochs_adam > 0 || error("epochs_adam must be positive, got $epochs_adam")
     
     epochs_linesearch = Int(get(run_section, "epochs_linesearch", 30))
-    epochs_linesearch > 0 || error("epochs_linesearch must be positive, got $epochs_linesearch")
+    #epochs_linesearch > 0 || error("epochs_linesearch must be positive, got $epochs_linesearch")
 
     invert_target = Symbol(String(get(model_section, "invert_target", "A")))
 
