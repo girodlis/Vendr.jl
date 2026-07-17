@@ -1,15 +1,18 @@
-# Generate 24 scenarios in config/scenarios.toml
+# Generate scenarios in config/scenarios.toml
 cd(@__DIR__)
 
-loss_types = ["H"]
+loss_types = ["H", "V", "HV"]
 use_tim_values = [false]
-sparsity_H_values = [false]
+sparsity_H_values = [false, true]
 sparsity_V_levels = [
     (0.0, 0.0),   # no sparsity
+    (0.7, 0.02),  # (sigma, threshold)
 ]
-# V1: regularization_weight = [1.0, 2.0, 5.0, 10.0, 30.0, 50.0, 100.0]
-# V2:
-regularization_weight = 10 .^ range(37, 39; length=20)
+
+#regularization_weight = 5.29e37 # H best
+#regularization_weight = range(1.29e38, 2.15e38; length=10) # V test 1
+#regularization_weight = 1.38e38 # V best
+regularization_weight = 0.0
 out = "scenarios.toml"
 
 open(out, "w") do io

@@ -1,16 +1,13 @@
 [campaign]
 name = "21_gridded_A_reg"
-results_dir = "outputs/results_V4"
+results_dir = "outputs/results_plots"
 
 [run]
-epochs_adam = 50
-epochs_linesearch = 30
+epochs_adam = 0
+epochs_linesearch = 2000 # TODO : change name
 
 rgi_ids = [
-  "RGI60-11.02072",
-  "RGI60-11.02773",
-  "RGI60-11.02249",
-  "RGI60-11.00746",
+  "RGI60-11.02773"
 ]
 
 [model]

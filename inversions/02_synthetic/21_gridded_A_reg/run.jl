@@ -13,6 +13,8 @@ context = build_campaign_run_context(campaign_root)
 
 run_campaign!(context)
 
+save_epoch_counts_csv(context)
+
 save_comparison_grids!(
     rgi_ids = context.campaign.rgi_ids,
     results_dir = context.results_dir,
@@ -34,7 +36,7 @@ plot_relative_error_boxplot(
 # Labels adaptés pour mettre en avant la régularisation
 scenario_labels = [
     if scenario.regularization_weight > 0.0
-        "$(scenario.id) | λ=$(round(scenario.regularization_weight, sigdigits=3))"
+        "$(scenario_label(1, scenario)) | λ=$(scenario.regularization_weight)"
     else
         scenario_label(1, scenario)  # Fallback au label standard
     end
