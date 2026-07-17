@@ -232,6 +232,158 @@ end
 
 
 
+"""
+    _scenario_variant_label(scenario::ScenarioConfig) -> String
+
+Compact label describing a scenario's variant (tim/sparsity), excluding `loss_type`
+since that is used as the facet/grouping dimension in the aggregated iteration plots.
+"""
+function _scenario_variant_label(scenario::ScenarioConfig)::String
+    return "$(scenario.id) | tim=$(scenario.use_tim) | H=$(scenario.sparsity_H) | Vσ=$(scenario.sparsity_V_sigma)"
+end
+
+"""
+    plot_loss_curves_by_group(scenario_inversions, scenarios; loss_type, results_dir="outputs/results", log_scale=true) -> String
+
+Overlay the total loss evolution (`inversion.results.stats.losses`) of every scenario
+whose `loss_type` matches `loss_type`, on a single axis. One line per scenario
+variant (tim/sparsity combination). Since the loss function directly targets `H`
+(when `loss_type="H"`) or `V` (when `loss_type="V"`), this curve doubles as the
+corresponding empirical error evolution; for `loss_type="HV"` it is the combined
+H+V loss (not separable post-hoc without re-running the forward simulation).
+"""
+function plot_loss_curves_by_group(
+        scenario_inversions::AbstractVector,
+        scenarios::AbstractVector;
+        loss_type::String,
+        results_dir::AbstractString = "outputs/results",
+        log_scale::Bool = true,
+)::String
+    length(scenario_inversions) == length(scenarios) || error("scenario_inversions and scenarios must have the same length")
+
+    fig = Figure(size = (900, 600))
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Iteration",
+        ylabel = log_scale ? "Loss (log10)" : "Loss",
+        title = "Loss evolution | loss_type=$(loss_type)",
+        yscale = log_scale ? log10 : identity,
+    )
+    _plot_loss_curves_on_axis!(ax, scenario_inversions, scenarios; loss_type = loss_type)
+    axislegend(ax, position = :rt, framevisible = false, labelsize = 10)
+
+    isdir(results_dir) || mkpath(results_dir)
+    output_path = joinpath(results_dir, "loss_evolution_group_$(loss_type).png")
+    CairoMakie.save(output_path, fig)
+    return output_path
+end
+
+function _plot_loss_curves_on_axis!(
+        ax,
+        scenario_inversions::AbstractVector,
+        scenarios::AbstractVector;
+        loss_type::String,
+)
+    for (inversion, scenario) in zip(scenario_inversions, scenarios)
+        scenario.loss_type == loss_type || continue
+        losses = inversion.results.stats.losses
+        isempty(losses) && continue
+        CairoMakie.lines!(ax, 1:length(losses), losses; label = _scenario_variant_label(scenario), linewidth = 1.5)
+    end
+    return nothing
+end
+
+"""
+    plot_loss_curves_faceted(context::CampaignRunContext; results_dir=context.results_dir, log_scale=true) -> String
+
+Single figure with one panel per `loss_type` ("H", "V", "HV"), each overlaying the
+loss evolution of every matching scenario. Aggregated alternative to one loss plot
+per scenario.
+"""
+function plot_loss_curves_faceted(
+        context::CampaignRunContext;
+        results_dir::AbstractString = context.results_dir,
+        log_scale::Bool = true,
+)::String
+    loss_types = ["H", "V", "HV"]
+    fig = Figure(size = (1650, 550))
+
+    for (col, lt) in enumerate(loss_types)
+        ax = Axis(
+            fig[1, col],
+            xlabel = "Iteration",
+            ylabel = col == 1 ? (log_scale ? "Loss (log10)" : "Loss") : "",
+            title = "loss_type = $(lt)",
+            yscale = log_scale ? log10 : identity,
+        )
+        _plot_loss_curves_on_axis!(ax, context.scenario_inversions, context.scenarios; loss_type = lt)
+        axislegend(ax, position = :rt, framevisible = false, labelsize = 8)
+    end
+
+    fig[0, :] = Label(fig, "Loss evolution by scenario variant, faceted by loss_type", fontsize = 16, font = :bold)
+
+    isdir(results_dir) || mkpath(results_dir)
+    output_path = joinpath(results_dir, "loss_iterations_by_losstype.png")
+    CairoMakie.save(output_path, fig)
+    return output_path
+end
+
+"""
+    plot_A_error_curves_faceted(context::CampaignRunContext; target=:A, results_dir=context.results_dir) -> String
+
+Single figure with one panel per `loss_type` ("H", "V", "HV"), showing the relative
+error (%) of the inverted target parameter (`A` by default) across optimization
+iterations. Computed from `θ_hist` via [`compute_A_error_history_campaign`](@ref), so
+it is available regardless of `loss_type` (unlike the H/V loss curves). One line per
+scenario variant, showing the mean across glaciers with a shaded min/max band.
+"""
+function plot_A_error_curves_faceted(
+        context::CampaignRunContext;
+        target::Symbol = :A,
+        results_dir::AbstractString = context.results_dir,
+)::String
+    df = compute_A_error_history_campaign(context; target = target)
+    loss_types = ["H", "V", "HV"]
+    fig = Figure(size = (1650, 550))
+
+    scenario_by_id = Dict(scenario.id => scenario for scenario in context.scenarios)
+
+    for (col, lt) in enumerate(loss_types)
+        ax = Axis(
+            fig[1, col],
+            xlabel = "Iteration",
+            ylabel = col == 1 ? "$(target) absolute relative error (%)" : "",
+            title = "loss_type = $(lt)",
+            yscale = log10,
+        )
+
+        sub = df[df.loss_type .== lt, :]
+        for scenario_id in unique(sub.scenario)
+            scenario_df = sub[sub.scenario .== scenario_id, :]
+            grouped = combine(
+                groupby(scenario_df, :iteration),
+                :relative_error_percent => (v -> mean(abs.(v))) => :mean_abs_err,
+                :relative_error_percent => (v -> minimum(abs.(v))) => :min_abs_err,
+                :relative_error_percent => (v -> maximum(abs.(v))) => :max_abs_err,
+            )
+            sort!(grouped, :iteration)
+            isempty(grouped) && continue
+
+            label = haskey(scenario_by_id, scenario_id) ? _scenario_variant_label(scenario_by_id[scenario_id]) : scenario_id
+            band!(ax, grouped.iteration, max.(grouped.min_abs_err, eps()), max.(grouped.max_abs_err, eps()); alpha = 0.15)
+            CairoMakie.lines!(ax, grouped.iteration, max.(grouped.mean_abs_err, eps()); label = label, linewidth = 1.5)
+        end
+        axislegend(ax, position = :rt, framevisible = false, labelsize = 8)
+    end
+
+    fig[0, :] = Label(fig, "$(target) error evolution by scenario variant, faceted by loss_type", fontsize = 16, font = :bold)
+
+    isdir(results_dir) || mkpath(results_dir)
+    output_path = joinpath(results_dir, "A_error_iterations_by_losstype.png")
+    CairoMakie.save(output_path, fig)
+    return output_path
+end
+
 function _build_loss_suffix(loss_type, use_tim, sparsity_H, sparsity_V_sigma, sparsity_V_threshold)
     suffix = ""
 
