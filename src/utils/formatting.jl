@@ -12,6 +12,13 @@ end
 
 Format a human-readable label for a scenario (used in plots and tables).
 """
-function scenario_label(i::Int, scenario::ScenarioConfig)
-    return "$(scenario.id) | loss=$(scenario.loss_type) | tim=$(scenario.use_tim) | H=$(scenario.sparsity_H) | Vσ=$(scenario.sparsity_V_sigma) | Vthr=$(scenario.sparsity_V_threshold)"
+function scenario_label(i::Int, 
+    scenario::ScenarioConfig,
+    short::Bool = false)
+    if short
+        return "$(scenario.id) | loss=$(scenario.loss_type) | tim=$(scenario.use_tim) \n
+        H=$(scenario.sparsity_H) | Vσ=$(scenario.sparsity_V_sigma) | Vthr=$(scenario.sparsity_V_threshold)"
+    else
+        return "$(scenario.id) | loss=$(scenario.loss_type) | tim=$(scenario.use_tim) | H=$(scenario.sparsity_H) | Vσ=$(scenario.sparsity_V_sigma) | Vthr=$(scenario.sparsity_V_threshold)"
+    end
 end
