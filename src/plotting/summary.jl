@@ -86,7 +86,8 @@ end
 """
     plot_thickness_differences_grid(results_vector, scenario_names; kwargs...) -> Figure
 
-Plot thickness differences (inverted - ground truth) for multiple scenarios in a grid.
+Plot thickness (or velocity norm, via `field=:V`) differences (inverted - ground
+truth) for multiple scenarios in a grid.
 """
 function plot_thickness_differences_grid(
         results_vector::Vector{Sleipnir.Results},
@@ -96,9 +97,14 @@ function plot_thickness_differences_grid(
         timeIdx::Union{Nothing, Int64} = nothing,
         plotContour::Bool = false,
         prefer_unmasked_reference::Bool = true,
+        field::Symbol = :H,
 )
     # Note: timeIdx and prefer_unmasked_reference are reserved for future time-selection features
     # Currently always uses last time step (results.H[end], results.H_ref[end])
+    field in (:H, :V) || error("Unsupported field=$(field). Use :H or :V.")
+    field_sym, field_ref_sym = field, Symbol(field, "_ref")
+    field_name = field == :H ? "Ice Thickness" : "Velocity Norm"
+    field_units = field == :H ? "m" : "m/yr"
 
     num_scenarios = length(results_vector)
     rows = clamp(round(Int, sqrt(num_scenarios)), 1, 3)
@@ -111,7 +117,8 @@ function plot_thickness_differences_grid(
     y = res1.y
     rgi_id = res1.rgi_id
     Δx = res1.Δx
-    # Use last time step of ground truth observations as stable glacier mask reference
+    # Use last time step of ground truth thickness observations as stable glacier mask reference
+    # (thickness, not velocity, since it reliably delineates the glacier extent)
     reference_base = res1.H_ref[end]
     mask = reference_base .> 0.0
     nx, ny = size(mask)
@@ -122,13 +129,13 @@ function plot_thickness_differences_grid(
     color_limit = 0.0
     found_finite_value = false
     for (i, results) in enumerate(results_vector)
-        H_current = results.H[end]
-        H_ref = results.H_ref[end]
+        field_current = getproperty(results, field_sym)[end]
+        field_ref = getproperty(results, field_ref_sym)[end]
 
-        size(H_current) == size(H_ref) || error("Scenario $(i): H and H_ref have different sizes ($(size(H_current)) vs $(size(H_ref))).")
-        size(H_ref) == (nx, ny) || error("Scenario $(i): H_ref size $(size(H_ref)) does not match first scenario size $((nx, ny)).")
+        size(field_current) == size(field_ref) || error("Scenario $(i): $(field_sym) and $(field_ref_sym) have different sizes ($(size(field_current)) vs $(size(field_ref))).")
+        size(field_ref) == (nx, ny) || error("Scenario $(i): $(field_ref_sym) size $(size(field_ref)) does not match first scenario size $((nx, ny)).")
 
-        diff = Float64.(H_current .- H_ref)
+        diff = Float64.(field_current .- field_ref)
         diff[.!mask] .= NaN
         thickness_diffs[i] = diff
 
@@ -137,7 +144,7 @@ function plot_thickness_differences_grid(
         found_finite_value |= scenario_has_finite
     end
 
-    found_finite_value || error("No finite thickness differences were found to plot")
+    found_finite_value || error("No finite $(field_name) differences were found to plot")
     color_limit > 0 || (color_limit = 1.0)
 
     base_panel_width = 300
@@ -222,8 +229,8 @@ function plot_thickness_differences_grid(
             fontsize = textsize)
     end
 
-    Colorbar(fig[:, cols + 1], reference_heatmap; label = "Thickness difference (m)")
-    fig[0, :] = Label(fig, "Ice Thickness Differences: Inverted - Ground Truth | $rgi_id", fontsize = fontsize_title)
+    Colorbar(fig[:, cols + 1], reference_heatmap; label = "$(field_name) difference ($(field_units))")
+    fig[0, :] = Label(fig, "$(field_name) Differences: Inverted - Ground Truth | $rgi_id", fontsize = fontsize_title)
 
     colsize!(gl, cols + 1, colorbar_width)
     for c in 1:cols
@@ -234,6 +241,190 @@ function plot_thickness_differences_grid(
     end
     resize_to_layout!(fig)
     return fig
+end
+
+"""
+    plot_field_all_scenarios_with_ground_truth(results_vector, scenario_names; kwargs...) -> Figure
+
+Plot ground truth alongside a grid of all scenario predictions for a field (`:H` or
+`:V`) directly available on `Sleipnir.Results`.
+
+Layout:
+- Left: Ground Truth (full height, large)
+- Right: Grid of predicted field values from all scenarios
+
+# Arguments
+- `results_vector::Vector{Sleipnir.Results}`: One result per scenario, for a single glacier
+- `scenario_names::Vector{String}`: Names for each scenario
+- `field::Symbol`: `:H` (thickness) or `:V` (velocity norm)
+- `figsize::Union{Nothing, Tuple{Int,Int}}`: Figure size (default auto)
+- `plotContour::Bool`: Plot glacier contour (default true)
+- `colormap`: Colormap to use (default :viridis)
+
+# Returns
+Figure object with ground truth on left and grid of scenarios on right
+"""
+function plot_field_all_scenarios_with_ground_truth(
+        results_vector::Vector{Sleipnir.Results},
+        scenario_names::Vector{String};
+        field::Symbol = :H,
+        figsize::Union{Nothing, Tuple{Int64, Int64}} = nothing,
+        plotContour::Bool = true,
+        colormap = :viridis,
+)
+    field in (:H, :V) || error("Unsupported field=$(field). Use :H or :V.")
+    field_ref_sym = Symbol(field, "_ref")
+    field_name = field == :H ? "Ice Thickness" : "Velocity Norm"
+    field_units = field == :H ? "m" : "m/yr"
+
+    num_scenarios = length(results_vector)
+    scenario_cols = ceil(Int, sqrt(num_scenarios))
+    scenario_rows = ceil(Int, num_scenarios / scenario_cols)
+
+    res1 = results_vector[1]
+    rgi_id = res1.rgi_id
+    x = res1.x
+    y = res1.y
+
+    # Use last time step of ground truth thickness as stable glacier mask reference
+    mask = res1.H_ref[end] .> 0.0
+    nx, ny = size(mask)
+
+    gt_masked = copy(Float64.(getproperty(res1, field_ref_sym)[end]))
+    gt_masked[.!mask] .= NaN
+
+    # Extract all scenario predictions and compute global bounds
+    field_values = Vector{Matrix{Float64}}(undef, num_scenarios)
+    all_values = Float64[]
+
+    for (i, results) in enumerate(results_vector)
+        value = copy(Float64.(getproperty(results, field)[end]))
+        size(value) == (nx, ny) || error("Scenario $(i): $(field) size $(size(value)) does not match mask size $((nx, ny)).")
+        value[.!mask] .= NaN
+        field_values[i] = value
+        append!(all_values, vec(value[isfinite.(value)]))
+    end
+    append!(all_values, vec(gt_masked[isfinite.(gt_masked)]))
+
+    global_min = minimum(all_values)
+    global_max = maximum(all_values)
+
+    ctr = plotContour ? Sleipnir.Contour.contour(collect(1:nx), 1 + ny .- collect(1:ny), mask, 0.5) : nothing
+
+    total_cols = 1 + scenario_cols
+    fig = Figure(size = isnothing(figsize) ? (400 + 350*scenario_cols, 400 + 350*scenario_rows) : figsize)
+
+    # ============ LEFT: Ground Truth ============
+    ax_gt = Axis(fig[1:scenario_rows, 1], aspect = DataAspect(), title = "Ground Truth")
+    hm_gt = Makie.heatmap!(ax_gt, Sleipnir.reverseForHeatmap(gt_masked, x, y),
+                     colormap = colormap, colorrange = (global_min, global_max))
+    ax_gt.xlabel = "Lon"
+    ax_gt.ylabel = "Lat"
+
+    if plotContour && !isnothing(ctr)
+        for curve in ctr.lines
+            lines!(ax_gt, first.(curve.vertices), last.(curve.vertices), color = :black, linewidth = 1.5, alpha = 0.4)
+        end
+    end
+
+    # ============ RIGHT: Grid of all scenarios ============
+    reference_heatmap = nothing
+    for scenario_idx in 1:num_scenarios
+        row = div(scenario_idx - 1, scenario_cols) + 1
+        col = mod(scenario_idx - 1, scenario_cols) + 1
+
+        ax_scenario = Axis(fig[row, col + 1], aspect = DataAspect(),
+                          title = scenario_names[scenario_idx])
+        hm_scenario = Makie.heatmap!(ax_scenario, Sleipnir.reverseForHeatmap(field_values[scenario_idx], x, y),
+                               colormap = colormap, colorrange = (global_min, global_max))
+
+        if scenario_idx == 1
+            reference_heatmap = hm_scenario
+        end
+
+        ax_scenario.xlabel = "Lon"
+        ax_scenario.ylabel = row == 1 ? "Lat" : ""
+
+        if row > 1
+            hideydecorations!(ax_scenario, grid = false)
+        end
+
+        if plotContour && !isnothing(ctr)
+            for curve in ctr.lines
+                lines!(ax_scenario, first.(curve.vertices), last.(curve.vertices),
+                      color = :black, linewidth = 1, alpha = 0.3)
+            end
+        end
+    end
+    Colorbar(fig[:, total_cols + 1], reference_heatmap; label = "$(field_name) ($(field_units))")
+    fig[0, :] = Label(fig, "$rgi_id | $(field_name)", fontsize = 16, font = :bold)
+
+    return fig
+end
+
+"""
+    plot_A_relative_error_heatmap(csv_path; output_path=nothing) -> String
+
+Synthetic table of `A` relative error (%) as a color-coded heatmap: one row per
+glacier (`rgi_id`), one column per scenario, with the value annotated in each cell.
+Reads directly from the campaign summary CSV, so it works even outside a live Julia
+session (no need for `context.scenario_inversions`).
+"""
+function plot_A_relative_error_heatmap(
+        csv_path::String;
+        output_path::Union{Nothing, String} = nothing,
+)::String
+    df = CSV.read(csv_path, DataFrame)
+    hasproperty(df, :scenario) || error("Missing column: scenario")
+    hasproperty(df, :rgi_id) || error("Missing column: rgi_id")
+    hasproperty(df, :relative_error_percent) || error("Missing column: relative_error_percent")
+
+    scenarios = unique(df.scenario)
+    rgi_ids = unique(df.rgi_id)
+
+    # Preserve scenario order as S1, S2, ... when possible
+    scenario_order = sortperm(scenarios, by = s -> (length(s), s))
+    scenarios = scenarios[scenario_order]
+
+    matrix = fill(NaN, length(rgi_ids), length(scenarios))
+    for (i, rgi_id) in enumerate(rgi_ids)
+        for (j, scenario) in enumerate(scenarios)
+            rows = findall((df.rgi_id .== rgi_id) .& (df.scenario .== scenario))
+            isempty(rows) && continue
+            matrix[i, j] = df.relative_error_percent[first(rows)]
+        end
+    end
+
+    color_limit = maximum(abs.(filter(isfinite, matrix)); init = 1.0)
+    color_limit > 0 || (color_limit = 1.0)
+
+    fig = Figure(size = (max(700, 70 * length(scenarios)), max(400, 40 * length(rgi_ids) + 120)))
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Scenario",
+        ylabel = "Glacier (RGI ID)",
+        title = "`A` relative error (%): predicted vs ground truth",
+        xticks = (1:length(scenarios), scenarios),
+        yticks = (1:length(rgi_ids), rgi_ids),
+        xticklabelrotation = π / 3,
+    )
+
+    hm = Makie.heatmap!(ax, matrix', colormap = :RdBu_11, colorrange = (-color_limit, color_limit))
+
+    for i in eachindex(rgi_ids), j in eachindex(scenarios)
+        value = matrix[i, j]
+        isfinite(value) || continue
+        text!(ax, "$(round(value; digits=2))", position = (j, i), align = (:center, :center), fontsize = 9)
+    end
+
+    Colorbar(fig[1, 2], hm; label = "Relative error (%)")
+    resize_to_layout!(fig)
+
+    if isnothing(output_path)
+        output_path = joinpath(dirname(csv_path), "A_relative_error_heatmap.png")
+    end
+    CairoMakie.save(output_path, fig)
+    return output_path
 end
 
 """
@@ -724,3 +915,4 @@ function plot_all_scenarios_with_ground_truth(
     
     return fig
 end
+

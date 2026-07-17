@@ -156,18 +156,43 @@ function save_comparison_grids!(;
     
     # Generate scenario_labels on-demand from scenarios
     scenario_labels = [scenario_label(i, scenario) for (i, scenario) in enumerate(scenarios)]
-    
-    # Save thickness grids
+
+    # Only plot H maps for scenarios whose loss actually constrains H (and same for V):
+    # e.g. thickness differences are not meaningful for a pure V-loss scenario.
+    h_mask = [scenario.loss_type in ("H", "HV") for scenario in scenarios]
+    v_mask = [scenario.loss_type in ("V", "HV") for scenario in scenarios]
+
+    # Save thickness (H) and velocity norm (V) grids
     for (i, rgi_id) in enumerate(rgi_ids)
         scenario_results = scenario_results_by_glacier[rgi_id]
         isempty(scenario_results) && continue
-        thickness_grid = plot_thickness_differences_grid(
-            scenario_results,
-            scenario_labels;
-            figsize = (1800, 1800),
-            plotContour = true,
-        )
-        save(joinpath(results_dir, "thickness_differences_grid_$(rgi_id).png"), thickness_grid)
+        # Grids below assume scenario_results[k] corresponds to scenarios[k]; this only
+        # holds when every scenario includes this glacier (no per-scenario rgi_ids subset).
+        length(scenario_results) == length(scenarios) || continue
+
+        if any(h_mask)
+            h_results = scenario_results[h_mask]
+            h_labels = scenario_labels[h_mask]
+            thickness_grid = plot_thickness_differences_grid(
+                h_results, h_labels; figsize = (1800, 1800), plotContour = true, field = :H,
+            )
+            save(joinpath(results_dir, "thickness_differences_grid_$(rgi_id).png"), thickness_grid)
+
+            thickness_gt_grid = plot_field_all_scenarios_with_ground_truth(h_results, h_labels; field = :H)
+            save(joinpath(results_dir, "thickness_predictions_with_gt_$(rgi_id).png"), thickness_gt_grid)
+        end
+
+        if any(v_mask)
+            v_results = scenario_results[v_mask]
+            v_labels = scenario_labels[v_mask]
+            velocity_grid = plot_thickness_differences_grid(
+                v_results, v_labels; figsize = (1800, 1800), plotContour = true, field = :V,
+            )
+            save(joinpath(results_dir, "velocity_norm_differences_grid_$(rgi_id).png"), velocity_grid)
+
+            velocity_gt_grid = plot_field_all_scenarios_with_ground_truth(v_results, v_labels; field = :V)
+            save(joinpath(results_dir, "velocity_predictions_with_gt_$(rgi_id).png"), velocity_gt_grid)
+        end
     end
 
     # Save target grids if provided
