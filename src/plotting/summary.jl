@@ -916,3 +916,284 @@ function plot_all_scenarios_with_ground_truth(
     return fig
 end
 
+"""
+    plot_scatter_H(results; kwargs...) -> Figure
+
+Scatter plot of inverted vs reference ice thickness.
+"""
+function plot_scatter_H(
+        results::Sleipnir.Results;
+        glacier_name::String = results.rgi_id,
+        figsize::Union{Nothing, Tuple{Int64, Int64}} = nothing,
+)
+    H_inv = Float64.(results.H[end])
+    H_ref = Float64.(results.H_ref[end])
+    mask  = H_ref .> 0.0
+
+    H_t = H_ref[mask]
+    H_i = H_inv[mask]
+
+    rmse = sqrt(mean((H_i .- H_t) .^ 2))
+    bias = mean(H_i .- H_t)
+    r2   = cor(H_i, H_t) ^ 2
+
+    lim = max(maximum(H_t), maximum(H_i)) * 1.05
+
+    fig = Figure(size = isnothing(figsize) ? (520, 500) : figsize)
+
+    ax = Axis(fig[1, 1],
+        title   = "Ice thickness scatter | $glacier_name",
+        xlabel  = "H reference (m)",
+        ylabel  = "H inverted (m)",
+        aspect  = 1,
+        limits  = (0, lim, 0, lim),
+    )
+
+    # Points (transparents pour la densité)
+    scatter!(ax, H_t, H_i,
+        color      = (:steelblue, 0.25),
+        markersize = 4,
+    )
+
+    # Ligne 1:1
+    lines!(ax, [0, lim], [0, lim],
+        color     = :black,
+        linewidth = 1.5,
+        linestyle = :dash,
+        label     = "1:1",
+    )
+
+    # Régression linéaire
+    A_mat = [ones(length(H_t)) H_t]
+    p     = A_mat \ H_i
+    lines!(ax, [0, lim], [p[1], p[1] + p[2]*lim],
+        color     = :crimson,
+        linewidth = 1.5,
+        label     = "Linear fit (slope=$(round(p[2], digits=2)))",
+    )
+
+    axislegend(ax, position = :lt, framevisible = false)
+
+    text!(ax,
+        "RMSE = $(round(rmse, digits=2)) m\n" *
+        "Bias  = $(round(bias, digits=2)) m\n" *
+        "R²    = $(round(r2, digits=3))",
+        position = (0.97*lim, 0.05*lim),
+        align    = (:right, :bottom),
+        fontsize = 10, color = :black,
+    )
+
+    resize_to_layout!(fig)
+    return fig
+end
+
+
+"""
+    plot_scatter_A(results; kwargs...) -> Figure
+
+Scatter plot of inverted vs reference A.
+"""
+
+function plot_scatter_A(
+        prediction::Prediction,
+        inversion::Inversion,
+        glacier_idx::Int;
+        glacier_name::String = inversion.glaciers[glacier_idx].rgi_id,
+        figsize::Union{Nothing, Tuple{Int64, Int64}} = nothing,
+        target::Symbol = :A,
+)
+
+    A_ref = Vendr._target_value(prediction, glacier_idx, target; θ=nothing)
+    A_inv = Vendr._target_value(inversion, glacier_idx, target; θ=inversion.results.stats.θ)
+
+    A_ref = A_ref isa Matrix ? A_ref : Array(A_ref)
+    A_inv = A_inv isa Matrix ? A_inv : Array(A_inv)
+
+    glacier = inversion.glaciers[glacier_idx]
+
+    interior_m, interior_n = size(A_ref)
+    full_m = interior_m + 1
+    full_n = interior_n + 1
+
+    mask = Vendr._valid_domain_mask(glacier, glacier.H₀)
+
+    A_padded = fill(NaN, full_m, full_n)
+    A_padded[1:interior_m, 1:interior_n] = A_ref
+    A_t = copy(A_padded)
+    A_t[.!mask] .= NaN
+
+    A_padded[1:interior_m, 1:interior_n] = A_inv
+    A_i = copy(A_padded)
+    A_i[.!mask] .= NaN
+
+    valid = mask .& isfinite.(A_t) .& isfinite.(A_i)
+    A_t_v = A_t[valid]
+    A_i_v = A_i[valid]
+    H_v   = Float64.(glacier.H₀[valid])   # épaisseur de référence co-localisée avec chaque point
+
+    rmse = sqrt(mean((A_i_v .- A_t_v) .^ 2))
+    bias = mean(A_i_v .- A_t_v)
+    r2   = cor(A_i_v, A_t_v) ^ 2
+
+    lim = max(maximum(A_t_v), maximum(A_i_v)) * 1.05
+
+    # Formatteur de ticks en notation scientifique (sinon Makie affiche "0")
+    sci_fmt(values) = [Printf.@sprintf("%.1e", v) for v in values]
+
+    fig = Figure(size = isnothing(figsize) ? (640, 520) : figsize)
+
+    ax = Axis(fig[1, 1],
+        title       = "A scatter | $glacier_name",
+        xlabel      = "A reference (Pa⁻³ s⁻¹)",
+        ylabel      = "A inverted (Pa⁻³ s⁻¹)",
+        aspect      = 1,
+        limits      = (0, lim, 0, lim),
+        xtickformat = sci_fmt,
+        ytickformat = sci_fmt,
+        xticklabelrotation = π/6,
+    )
+
+    # Points colorés par H_ref pour voir si les mauvaises prédictions de A sont liées à l'épaisseur
+    hmin, hmax = extrema(H_v)
+    sc = scatter!(ax, A_t_v, A_i_v,
+        color      = H_v,
+        colormap   = :viridis,
+        colorrange = (hmin, hmax),
+        markersize = 5,
+    )
+
+    # Ligne 1:1
+    lines!(ax, [0, lim], [0, lim],
+        color     = :black,
+        linewidth = 1.5,
+        linestyle = :dash,
+        label     = "1:1",
+    )
+
+    # Régression linéaire
+    A_mat = [ones(length(A_t_v)) A_t_v]
+    p     = A_mat \ A_i_v
+    lines!(ax, [0, lim], [p[1], p[1] + p[2]*lim],
+        color     = :crimson,
+        linewidth = 1.5,
+        label     = "Linear fit (slope=$(round(p[2], digits=2)))",
+    )
+
+    axislegend(ax, position = :lt, framevisible = false)
+
+    Colorbar(fig[1, 2], sc, label = "H reference (m)", width = 15, ticklabelsize = 10)
+
+    text!(ax,
+        "RMSE = $(Printf.@sprintf("%.2e", rmse))\n" *
+        "Bias  = $(Printf.@sprintf("%.2e", bias))\n" *
+        "R²    = $(round(r2, digits=3))",
+        position = (0.97*lim, 0.05*lim),
+        align    = (:right, :bottom),
+        fontsize = 10, color = :black,
+    )
+
+    resize_to_layout!(fig)
+    return fig
+end
+
+function plot_residual_A_vs_H(
+        prediction::Prediction,
+        inversion::Inversion,
+        glacier_idx::Int;
+        glacier_name::String = inversion.glaciers[glacier_idx].rgi_id,
+        figsize::Union{Nothing, Tuple{Int64, Int64}} = nothing,
+        target::Symbol = :A,
+        H_thresh::Union{Nothing, Float64} = nothing,  # ex: 20.0 -> trace une ligne verticale repère
+        nbins::Int = 20,                              # nb de bins pour la courbe de tendance médiane
+)
+
+    A_ref = Vendr._target_value(prediction, glacier_idx, target; θ=nothing)
+    A_inv = Vendr._target_value(inversion, glacier_idx, target; θ=inversion.results.stats.θ)
+
+    A_ref = A_ref isa Matrix ? A_ref : Array(A_ref)
+    A_inv = A_inv isa Matrix ? A_inv : Array(A_inv)
+
+    glacier = inversion.glaciers[glacier_idx]
+
+    interior_m, interior_n = size(A_ref)
+    full_m = interior_m + 1
+    full_n = interior_n + 1
+
+    mask = Vendr._valid_domain_mask(glacier, glacier.H₀)
+
+    A_padded = fill(NaN, full_m, full_n)
+    A_padded[1:interior_m, 1:interior_n] = A_ref
+    A_t = copy(A_padded)
+    A_t[.!mask] .= NaN
+
+    A_padded[1:interior_m, 1:interior_n] = A_inv
+    A_i = copy(A_padded)
+    A_i[.!mask] .= NaN
+
+    valid = mask .& isfinite.(A_t) .& isfinite.(A_i)
+    A_t_v = A_t[valid]
+    A_i_v = A_i[valid]
+    H_v   = Float64.(glacier.H₀[valid])
+
+    residual = abs.(A_i_v .- A_t_v)
+
+    # Pour l'échelle log en y, on retire les résidus exactement nuls (rares, mais log(0) = -Inf)
+    pos = residual .> 0
+    H_plot   = H_v[pos]
+    res_plot = residual[pos]
+
+    # --- Courbe de tendance : médiane du résidu par bin de H (bins linéaires) ---
+    hmin, hmax = extrema(H_plot)
+    edges = range(hmin, hmax; length = nbins + 1)
+    bin_centers = Float64[]
+    bin_medians = Float64[]
+    for k in 1:nbins
+        lo, hi = edges[k], edges[k+1]
+        in_bin = (H_plot .>= lo) .& (H_plot .< (k == nbins ? hi + eps() : hi))
+        if any(in_bin)
+            push!(bin_centers, (lo + hi) / 2)
+            push!(bin_medians, median(res_plot[in_bin]))
+        end
+    end
+
+    sci_fmt(values) = [Printf.@sprintf("%.1e", v) for v in values]
+
+    fig = Figure(size = isnothing(figsize) ? (640, 480) : figsize)
+
+    ax = Axis(fig[1, 1],
+        title       = "|A_inv - A_ref| vs H reference | $glacier_name",
+        xlabel      = "H reference (m)",
+        ylabel      = "|A_inv - A_ref| (Pa⁻³ s⁻¹)",
+        yscale      = log10,
+        ytickformat = sci_fmt,
+    )
+
+    # Nuage de points brut
+    scatter!(ax, H_plot, res_plot,
+        color      = (:steelblue, 0.25),
+        markersize = 4,
+        label      = "Pixels",
+    )
+
+    # Tendance médiane par bin
+    lines!(ax, bin_centers, bin_medians,
+        color     = :crimson,
+        linewidth = 2.5,
+        label     = "Médiane (bins de H)",
+    )
+    scatter!(ax, bin_centers, bin_medians,
+        color      = :crimson,
+        markersize = 7,
+    )
+
+    # Ligne verticale de seuil, si fournie
+    if !isnothing(H_thresh)
+        vlines!(ax, [H_thresh], color = :black, linestyle = :dot, linewidth = 1.5,
+            label = "H_thresh = $(H_thresh) m")
+    end
+
+    axislegend(ax, position = :rt, framevisible = false)
+
+    resize_to_layout!(fig)
+    return fig
+end
