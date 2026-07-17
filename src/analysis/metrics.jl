@@ -163,3 +163,77 @@ function compute_relative_error(
 
     return _relative_error_percent(pred_value, gt_value, glacier)
 end
+
+"""
+    compute_A_error_history(
+        inversion,
+        prediction,
+        glacier_idx::Int;
+        target::Symbol=:A,
+    ) -> Vector{Float64}
+
+Compute the percent relative error of the inverted target parameter at every
+recorded optimization iteration, using `inversion.results.stats.θ_hist`.
+
+Unlike thickness/velocity errors, this does not require re-running the forward
+(PDE) simulation: the target law is evaluated directly from each historical `θ`,
+so it stays cheap even for long optimization runs.
+"""
+function compute_A_error_history(
+        inversion,
+        prediction,
+        glacier_idx::Int;
+        target::Symbol=:A,
+)::Vector{Float64}
+    θ_hist = inversion.results.stats.θ_hist
+    gt_value = _target_value(prediction, glacier_idx, target; θ=nothing)
+    glacier = prediction.glaciers[glacier_idx]
+
+    return [
+        _relative_error_percent(_target_value(inversion, glacier_idx, target; θ=θ), gt_value, glacier)
+        for θ in θ_hist
+    ]
+end
+
+"""
+    compute_A_error_history_campaign(context::CampaignRunContext; target::Symbol=:A) -> DataFrame
+
+Build a long-format DataFrame of the target parameter's relative error at every
+optimization iteration, for every (scenario, glacier) pair already run in
+`context.scenario_inversions`/`context.scenario_predictions`.
+
+Columns: `scenario, loss_type, use_tim, sparsity_H, sparsity_V_sigma,
+sparsity_V_threshold, rgi_id, iteration, relative_error_percent`.
+"""
+function compute_A_error_history_campaign(
+        context::CampaignRunContext;
+        target::Symbol=:A,
+)::DataFrame
+    n = min(length(context.scenario_inversions), length(context.scenario_predictions), length(context.scenarios))
+
+    rows = NamedTuple[]
+    for i in 1:n
+        scenario = context.scenarios[i]
+        inversion = context.scenario_inversions[i]
+        prediction = context.scenario_predictions[i]
+
+        for (glacier_idx, rgi_id) in enumerate(scenario.rgi_ids)
+            errors = compute_A_error_history(inversion, prediction, glacier_idx; target=target)
+            for (iteration, err) in enumerate(errors)
+                push!(rows, (
+                    scenario = scenario.id,
+                    loss_type = scenario.loss_type,
+                    use_tim = scenario.use_tim,
+                    sparsity_H = scenario.sparsity_H,
+                    sparsity_V_sigma = scenario.sparsity_V_sigma,
+                    sparsity_V_threshold = scenario.sparsity_V_threshold,
+                    rgi_id = rgi_id,
+                    iteration = iteration,
+                    relative_error_percent = err,
+                ))
+            end
+        end
+    end
+
+    return DataFrame(rows)
+end
