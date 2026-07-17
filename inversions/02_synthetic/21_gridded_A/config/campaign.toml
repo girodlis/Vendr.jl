@@ -1,16 +1,14 @@
 [campaign]
 name = "21_gridded_A"
-results_dir = "outputs/results4"
+results_dir = "outputs/results_conv_alban_adjD_ds3_2_glaciers"
 
 [run]
-epochs_adam = 20
-epochs_linesearch = 30
+epochs_adam = 0
+epochs_linesearch = 2000
 
 rgi_ids = [
   "RGI60-11.02072",
   "RGI60-11.02773",
-  "RGI60-11.02249",
-  "RGI60-11.00746",
 ]
 
 [model]
@@ -18,7 +16,7 @@ invert_target = "A"
 law_A = "CuffeyPatersonGridded"
 
 [simulation]
-gridScalingFactor = 2  # Spatial resolution downsampling for gridded A inversion
+gridScalingFactor = 3  # Spatial resolution downsampling for gridded A inversion
 tspan = [2010.0, 2011.0]
 spinup = true
 spinup_tspan = [2009.0, 2010.0]

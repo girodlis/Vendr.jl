@@ -26,25 +26,24 @@ sparsity_V_threshold = 0.0
 
 [[scenarios]]
 id = "S4"
-loss_type = "H"
-use_tim = true
+loss_type = "V"
+use_tim = false
 sparsity_H = false
-sparsity_V_sigma = 0.0
-sparsity_V_threshold = 0.0
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
 
 [[scenarios]]
 id = "S5"
-loss_type = "V"
-use_tim = true
-sparsity_H = false
+loss_type = "H"
+use_tim = false
+sparsity_H = true
 sparsity_V_sigma = 0.0
 sparsity_V_threshold = 0.0
 
 [[scenarios]]
 id = "S6"
 loss_type = "HV"
-use_tim = true
-sparsity_H = false
-sparsity_V_sigma = 0.0
-sparsity_V_threshold = 0.0
-
+use_tim = false
+sparsity_H = true
+sparsity_V_sigma = 0.7
+sparsity_V_threshold = 0.02
