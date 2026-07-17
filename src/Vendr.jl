@@ -131,6 +131,8 @@ export run_scenario!,
 
 # Results and reporting
 export compute_relative_error,
+       compute_A_error_history,
+       compute_A_error_history_campaign,
        relative_error_temperate_ice_percent,
        save_results_csv,
        save_epoch_counts_csv,
@@ -143,8 +145,13 @@ export compute_relative_error,
 # Plotting
 export plot_loss_evolution,
        plot_losses,
+       plot_loss_curves_by_group,
+       plot_loss_curves_faceted,
+       plot_A_error_curves_faceted,
        plot_relative_error_boxplot,
        plot_thickness_differences_grid,
+       plot_field_all_scenarios_with_ground_truth,
+       plot_A_relative_error_heatmap,
        plot_target_difference_grid,
        plot_target_comparison,
        plot_all_scenarios_with_ground_truth
