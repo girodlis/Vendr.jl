@@ -33,4 +33,7 @@ JuliaLocalPreferences.toml
 # Vendr inversion run artifacts
 inversions/**/outputs/**
 inversions/**/data/**
+inversions/**/*.png
+/data/
+/*.png
 **/.DS_Store
