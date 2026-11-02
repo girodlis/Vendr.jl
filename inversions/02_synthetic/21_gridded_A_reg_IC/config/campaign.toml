@@ -1,0 +1,22 @@
+[campaign]
+name = "21_gridded_A_reg_IC"
+results_dir = "outputs/results"
+
+[run]
+epochs_adam = 0
+epochs_linesearch = 2000 # TODO : change name
+
+rgi_ids = [
+  "RGI60-11.00746"
+]
+
+[model]
+invert_target = "A"
+law_A = "CuffeyPatersonGridded"
+
+[simulation]
+gridScalingFactor = 3
+tspan = [2010.0, 2011.0]
+spinup = false
+step = 0.08333333333333333  # 1/12 for monthly
+step_gt = 1.0

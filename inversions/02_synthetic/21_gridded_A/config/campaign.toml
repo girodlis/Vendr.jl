@@ -1,6 +1,6 @@
 [campaign]
 name = "21_gridded_A"
-results_dir = "outputs/results_conv_alban_adjD_ds3_2_glaciers"
+results_dir = "outputs/results_VF"
 
 [run]
 epochs_adam = 0
@@ -8,7 +8,15 @@ epochs_linesearch = 2000
 
 rgi_ids = [
   "RGI60-11.02072",
+  "RGI60-11.00746",
+  "RGI60-11.02801",
+  "RGI60-11.01328",
+  "RGI60-11.02774",
+  "RGI60-11.00872",
+  "RGI60-11.01450",
+  "RGI60-11.00887",
   "RGI60-11.02773",
+  "RGI60-11.02249",
 ]
 
 [model]

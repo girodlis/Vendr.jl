@@ -1,22 +1,22 @@
 [campaign]
 name = "21_classic_no_reg"
-results_dir = "outputs/results_VF"
+results_dir = "outputs/results_10_glaciers"
 
 [run]
-epochs_adam = 50
+epochs_adam = 20
 epochs_linesearch = 30
 
 rgi_ids = [
-  "RGI60-11.02072",
-  "RGI60-11.00746",
-  "RGI60-11.02801",
-  "RGI60-11.01328",
-  "RGI60-11.02774",
-  "RGI60-11.00872",
-  "RGI60-11.01450",
-  "RGI60-11.00887",
-  "RGI60-11.02773",
-  "RGI60-11.02249",
+    "RGI60-11.02072",
+    "RGI60-11.00746",
+    "RGI60-11.02801",
+    "RGI60-11.01328",
+    "RGI60-11.02774",
+    "RGI60-11.00872",
+    "RGI60-11.01450",
+    "RGI60-11.00887",
+    "RGI60-11.02773",
+    "RGI60-11.02249",
 ]
 
 
@@ -28,5 +28,5 @@ law_A = "TemperateA"
 tspan = [2010.0, 2011.0]
 spinup = true
 spinup_tspan = [2009.0, 2010.0]
-step = 0.08333333333333333  # 1/12 for monthly
+step = 0.04166667 # 1/24
 step_gt = 1.0

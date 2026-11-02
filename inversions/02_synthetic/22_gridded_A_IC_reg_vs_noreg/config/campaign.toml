@@ -1,0 +1,23 @@
+[campaign]
+name = "23_gridded_A_IC_reg_vs_noreg"
+results_dir = "outputs/results_girose"
+
+[run]
+epochs_adam = 0
+epochs_linesearch = 1000 # TODO : change name
+
+rgi_ids = [
+    "RGI60-11.03676",
+]
+
+[model]
+invert_target = "A"
+law_A = "CuffeyPatersonGridded"
+
+[simulation]
+gridScalingFactor = 1
+tspan = [2010.0, 2011.0]
+spinup = false
+step = 0.00480769230769
+step_gt = 1.0
+use_glathida_data = false
