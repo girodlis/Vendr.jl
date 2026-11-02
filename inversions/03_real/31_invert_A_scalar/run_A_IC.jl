@@ -4,6 +4,8 @@ using SciMLSensitivity
 using ODINN
 using Vendr
 
+cd(@__DIR__)
+
 rgi_paths = get_rgi_paths()
 rgi_ids   = ["RGI60-11.02773"]
 
@@ -12,16 +14,16 @@ params = Parameters(
         use_MB             = false,
         tspan              = (2017.0, 2018.0),
         multiprocessing    = false,
-        gridScalingFactor  = 1,
         rgi_paths          = rgi_paths,
-        ice_thickness_source = :Millan22,
+        #ice_thickness_source = :Millan22,
         velocity_product   = :Millan22,
+        gridScalingFactor = 2,
     ),
     hyper = Hyperparameters(
         batch_size = length(rgi_ids),
-        epochs     = [200, 30],
+        epochs     = [300, 30],
         optimizer  = [
-            ODINN.Adam(0.01),
+            ODINN.Adam(0.5),
             ODINN.LBFGS(linesearch = ODINN.LineSearches.BackTracking(iterations = 20)),
         ],
     ),
@@ -31,9 +33,10 @@ params = Parameters(
     ),
     UDE = UDEparameters(
         optim_autoAD = ODINN.NoAD(),
+        #grad = DiscreteAdjoint(),
         empirical_loss_function = MultiLoss(
             losses = (
-                LossAvgV(component = :abs),
+                LossAvgV(loss = LogSum(ϵ = 10.0), component = :abs),
                 InitialThicknessRegularization(2017.0),
             ),
             λs = (1.0, 1e-4),

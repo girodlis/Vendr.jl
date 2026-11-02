@@ -40,3 +40,6 @@ inversions/**/*.png
 
 # Scenario matrices are generated locally by config/scenarios.jl
 inversions/**/config/scenarios.toml
+
+# Run logs
+*.log

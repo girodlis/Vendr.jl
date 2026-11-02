@@ -31,7 +31,7 @@ params = Parameters(
     ),
     UDE = UDEparameters(
         optim_autoAD = ODINN.NoAD(),
-        empirical_loss_function = LossAvgV(component = :abs),
+        empirical_loss_function = LossAvgV(loss = LogSum(ϵ = 10.0), component = :abs),
     ),
     solver = Huginn.SolverParameters(step = 1/12),
 )
