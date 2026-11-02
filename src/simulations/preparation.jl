@@ -52,7 +52,16 @@ function apply_masks(campaign::CampaignConfig, scenario::ScenarioConfig, glacier
             isnothing(hdata) && continue
             unmasked_thickness_ref[glacier.rgi_id] = deepcopy(hdata.H)
             ntstops = length(hdata.H)
-            glathida_mask = glacier.H_glathida .> 0.0
+            glathida_mask = if campaign.use_glathida_data
+                glacier.H_glathida .> 0.0
+            else
+                # No real GlaThiDa coverage for this glacier: reuse the V sparsity
+                # mask generator to synthesize a point-like sparse mask instead.
+                Sleipnir.random_spatially_coherent_mask(.!glacier.mask;
+                    sigma = campaign.fake_glathida_sigma,
+                    threshold = campaign.fake_glathida_threshold,
+                )
+            end
             if campaign.gridScalingFactor > 1
                 glathida_mask = downscale_mask(glathida_mask, campaign.gridScalingFactor)
             end

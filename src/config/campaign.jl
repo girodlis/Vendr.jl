@@ -47,6 +47,13 @@ Global configuration for a glacier inversion campaign.
 - `n_observations_gt::Union{Int, Nothing}`: Number of evenly-spaced GT observations (if set, overrides `step_gt`)
 - `spinup::Bool`: Enable initial spinup simulation
 - `spinup_tspan::Tuple{Float64, Float64}`: Spinup time span
+- `use_glathida_data::Bool`: Whether to fetch and use real GlaThiDa data (default `true`).
+  Set to `false` for glaciers without GlaThiDa coverage.
+- `fake_glathida_sigma::Float64`: Smoothing scale for the synthetic sparsity mask used in
+  place of real GlaThiDa data when `use_glathida_data = false` (same function as the V
+  sparsity mask, see `Sleipnir.random_spatially_coherent_mask`).
+- `fake_glathida_threshold::Float64`: Threshold for the synthetic sparsity mask used in
+  place of real GlaThiDa data when `use_glathida_data = false`.
 """
 Base.@kwdef struct CampaignConfig
     name::String
@@ -63,6 +70,9 @@ Base.@kwdef struct CampaignConfig
     step_gt::Union{Float64, Nothing} = nothing
     spinup::Bool
     spinup_tspan::Tuple{Float64, Float64}
+    use_glathida_data::Bool = true
+    fake_glathida_sigma::Float64 = 0.0
+    fake_glathida_threshold::Float64 = 0.0
 end
 
 Base.@kwdef struct CampaignRunContext
@@ -181,6 +191,9 @@ function load_campaign_config(
     spinup = Bool(get(simulation_section, "spinup", true))
     spinup_tspan = _as_tspan(get(simulation_section, "spinup_tspan", nothing), (2009.0, 2010.0); key = "spinup_tspan")
 
+    use_glathida_data = Bool(get(simulation_section, "use_glathida_data", true))
+    fake_glathida_sigma = Float64(get(simulation_section, "fake_glathida_sigma", 0.0))
+    fake_glathida_threshold = Float64(get(simulation_section, "fake_glathida_threshold", 0.0))
 
     return CampaignConfig(
         name = name,
@@ -197,6 +210,9 @@ function load_campaign_config(
         step_gt = step_gt,
         spinup = spinup,
         spinup_tspan = spinup_tspan,
+        use_glathida_data = use_glathida_data,
+        fake_glathida_sigma = fake_glathida_sigma,
+        fake_glathida_threshold = fake_glathida_threshold,
     )
 end
 
@@ -258,6 +274,7 @@ function load_scenarios(
         overrides::Dict{String, Any} = Dict{String, Any}(),
 )::Vector{ScenarioConfig}
     path = resolve_config_path(campaign_root, "scenarios.toml")
+    isfile(path) || @warn "No scenarios.toml found in $(campaign_root): generate it with `julia config/scenarios.jl`."
     raw = isfile(path) ? TOML.parsefile(path) : Dict{String, Any}()
     raw = _deep_merge_dicts(raw, overrides)
 

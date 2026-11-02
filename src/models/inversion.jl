@@ -37,7 +37,7 @@ function build_inversion_model(
     iceflow = SIA2Dmodel(params; A = A_law)
 
     MB_model = scenario.use_tim ?
-        mass_balance = TImodel1(params; DDF = 6.0/1000.0, acc_factor = 1.2/1000.0) :
+        mass_balance = TImodel1(params; DDF = 6.0/1000.0, prcp_fac = 1.2) :
         nothing
 
     return Model(

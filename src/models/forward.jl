@@ -1,3 +1,7 @@
+_glacier_params_without_UDE(params) = Sleipnir.Parameters{
+    typeof(params.physical), typeof(params.simulation), Nothing, Nothing, Nothing}(
+    params.physical, params.simulation, nothing, nothing, nothing)
+
 function _build_spinup_parameters(params, spinup_tspan)
     params.simulation.tspan == spinup_tspan && return params
 
@@ -45,12 +49,12 @@ function build_ground_truth(
 
     if campaign.spinup
         spinup_params = _build_spinup_parameters(params, campaign.spinup_tspan)
-        spinup_glaciers = initialize_glaciers(scenario.rgi_ids, spinup_params)
+        spinup_glaciers = initialize_glaciers(scenario.rgi_ids, _glacier_params_without_UDE(spinup_params))
 
         spinup_MB_model = scenario.use_tim ?
             mass_balance = TImodel1(
                 spinup_params; DDF = 6.0/1000.0,
-                acc_factor = 1.2/1000.0
+                prcp_fac = 1.2
             ) :
             nothing
 
@@ -63,7 +67,7 @@ function build_ground_truth(
         spinup_prediction = Prediction(spinup_model, spinup_glaciers, spinup_params)
         run!(spinup_prediction)
 
-        glaciers = initialize_glaciers(scenario.rgi_ids, params)
+        glaciers = initialize_glaciers(scenario.rgi_ids, _glacier_params_without_UDE(params))
         for (glacier, result) in zip(glaciers, spinup_prediction.results)
             final_H = result.H[end]
             glacier.H₀ .= final_H
@@ -76,7 +80,7 @@ function build_ground_truth(
             end
         end
     else
-        glaciers = initialize_glaciers(scenario.rgi_ids, params)
+        glaciers = initialize_glaciers(scenario.rgi_ids, _glacier_params_without_UDE(params))
     end
 
     A_gt = resolve_law_A(campaign, params; mode = :ground_truth)
@@ -85,7 +89,7 @@ function build_ground_truth(
     MB_model = scenario.use_tim ?
         mass_balance = TImodel1(
             params; DDF = 6.0/1000.0,
-            acc_factor = 1.2/1000.0
+            prcp_fac = 1.2
         ) :
         nothing
         

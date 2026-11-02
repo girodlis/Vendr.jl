@@ -197,22 +197,30 @@ function save_comparison_grids!(;
         end
     end
 
-    # Save target grids if provided
-    if !isnothing(scenario_inversions) && !isnothing(scenario_predictions)
-        for (i, rgi_id) in enumerate(rgi_ids)
-            scenario_results = scenario_results_by_glacier[rgi_id]
-            isempty(scenario_results) && continue
-            #TODO: plot target differences grid only when griddedA
-            target_grid = plot_target_difference_grid(
-                scenario_inversions,
-                scenario_predictions,
-                i,
-                :A,
-                scenario_labels;
-                relative_error = true,
-                results_dir = results_dir,
-            )
-            save(joinpath(results_dir, "target_differences_grid_$(rgi_id).png"), target_grid)
+    # Save target grids if provided. plot_target_difference_grid only makes sense for a
+    # gridded/spatial target (e.g. CuffeyPatersonGridded): for a scalar target (e.g.
+    # TemperateA/GlacierWideInv) the underlying value has 0 dimensions, and destructuring
+    # its `size()` (an empty tuple) throws `BoundsError: attempt to access Tuple{} at
+    # index [1]`. Use plot_A_relative_error_heatmap for the scalar case instead.
+    if !isnothing(scenario_inversions) && !isnothing(scenario_predictions) && !isempty(scenario_inversions)
+        first_inversion = scenario_inversions[1]
+        is_gridded_target = ndims(_target_value(first_inversion, 1, :A; θ = first_inversion.results.stats.θ)) > 0
+
+        if is_gridded_target
+            for (i, rgi_id) in enumerate(rgi_ids)
+                scenario_results = scenario_results_by_glacier[rgi_id]
+                isempty(scenario_results) && continue
+                target_grid = plot_target_difference_grid(
+                    scenario_inversions,
+                    scenario_predictions,
+                    i,
+                    :A,
+                    scenario_labels;
+                    relative_error = true,
+                    results_dir = results_dir,
+                )
+                save(joinpath(results_dir, "target_differences_grid_$(rgi_id).png"), target_grid)
+            end
         end
     end
 
