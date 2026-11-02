@@ -37,3 +37,6 @@ inversions/**/*.png
 /data/
 /*.png
 **/.DS_Store
+
+# Scenario matrices are generated locally by config/scenarios.jl
+inversions/**/config/scenarios.toml

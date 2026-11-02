@@ -20,10 +20,32 @@ julia --project=. inversions/02_synthetic/21_autoAD/run.jl
 ## Campaign Structure
 
 Each campaign directory contains:
-- `config/` - TOML configuration files (`campaign.toml`, `scenarios.toml`)
+- `config/` - Configuration: `campaign.toml` and `scenarios.jl` (generates `scenarios.toml`)
 - `data/` - Campaign-specific data
 - `outputs/` - Results and logs
 - `run.jl` - Main execution script
+
+### Scenarios
+
+`scenarios.toml` is not versioned: generate it before the first run with
+
+```bash
+julia inversions/02_synthetic/21_classic_no_reg/config/scenarios.jl
+```
+
+Each `[[scenarios]]` entry overrides the defaults below (all keys are optional):
+
+```toml
+[[scenarios]]
+id = "S1"
+loss_type = "HV"              # "H", "V" or "HV"
+use_tim = false               # use the TI mass balance model
+sparsity_H = true             # restrict H observations to the GlaThiDa mask
+sparsity_V_sigma = 0.7        # V sparsity mask smoothing (0.0 = dense V)
+sparsity_V_threshold = 0.02   # V sparsity mask threshold
+regularization_weight = 3e37  # rheology regularization weight on A (0.0 = none)
+# rgi_ids = ["RGI60-11.02773"] # override the campaign glaciers
+```
 
 ### Compact Run Workflow
 
