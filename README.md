@@ -2,19 +2,53 @@
 
 A Julia package to orchestrate glacier inversion campaigns using the ODINN.jl ecosystem.
 
+## Installation
+
+Vendr uses local checkouts (`Pkg.develop`) of the ODINN ecosystem, pinned to these releases
+(see `[compat]` in `Project.toml`):
+
+| Package  | Version |
+|----------|---------|
+| ODINN    | v1.2.0  |
+| Huginn   | v0.17.0 |
+| Muninn   | v0.14.0 |
+| Sleipnir | v0.17.1 |
+
+```bash
+cd ~/.julia/dev
+for p in ODINN:v1.2.0 Huginn:v0.17.0 Muninn:v0.14.0 Sleipnir:v0.17.1; do
+  git clone https://github.com/ODINN-SciML/${p%%:*}.jl ${p%%:*} && git -C ${p%%:*} switch --detach ${p##*:}
+done
+cd Vendr.jl
+julia --project=. -e 'using Pkg; Pkg.develop([PackageSpec(path = joinpath("..", p)) for p in ("Sleipnir", "Muninn", "Huginn", "ODINN")]); Pkg.instantiate()'
+```
+
+### Previous setup
+
+Results produced up to 2026-11-02 (`outputs/` folders dated before that) were obtained with
+unreleased checkouts. The compat bounds of ODINN and Huginn were also edited locally to accept
+Muninn 0.14 / Sleipnir 0.17:
+
+| Package  | Commit    | Version in `Project.toml`   |
+|----------|-----------|-----------------------------|
+| ODINN    | `595ff18` | 1.1.0 (`dev` branch)        |
+| Huginn   | `46b972c` | 0.16.0                      |
+| Muninn   | `7cbcf94` | 0.14.0 (= v0.14.0)          |
+| Sleipnir | `de6c4a9` | 0.17.0 (= v0.17.0)          |
+
 ## Quick Start
 
 All campaigns use the **single `Project.toml` at the root** (`../../../`). You can run from either location:
 
 ### Option 1: From the campaign directory
 ```bash
-cd inversions/02_synthetic/21_autoAD
+cd inversions/02_synthetic/21_classic_no_reg
 julia --project=../../../ run.jl
 ```
 
 ### Option 2: From Vendr.jl root
 ```bash
-julia --project=. inversions/02_synthetic/21_autoAD/run.jl
+julia --project=. inversions/02_synthetic/21_classic_no_reg/run.jl
 ```
 
 ## Campaign Structure

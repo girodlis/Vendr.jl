@@ -27,15 +27,19 @@ TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 
 [compat]
 FiniteDifferences = "0.12.34"
+Huginn = "0.17"
 Infiltrator = "1.9.11"
 JLD2 = "0.4, 0.5, 0.6"
+Muninn = "0.14"
 NCDatasets = "0.14.15"
+ODINN = "1.2"
 Polynomials = "4.1.1"
 Printf = "1.11.0"
 Rasters = "0.15.0"
 Reexport = "1.2.2"
 Revise = "3.7.5"
 SciMLSensitivity = "7.106.0"
+Sleipnir = "0.17"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
