@@ -949,13 +949,13 @@ function plot_scatter_H(
         limits  = (0, lim, 0, lim),
     )
 
-    # Points (transparents pour la densité)
+    # Points (transparent to show density)
     scatter!(ax, H_t, H_i,
         color      = (:steelblue, 0.25),
         markersize = 4,
     )
 
-    # Ligne 1:1
+    # 1:1 line
     lines!(ax, [0, lim], [0, lim],
         color     = :black,
         linewidth = 1.5,
@@ -963,7 +963,7 @@ function plot_scatter_H(
         label     = "1:1",
     )
 
-    # Régression linéaire
+    # Linear regression
     A_mat = [ones(length(H_t)) H_t]
     p     = A_mat \ H_i
     lines!(ax, [0, lim], [p[1], p[1] + p[2]*lim],
@@ -1029,7 +1029,7 @@ function plot_scatter_A(
     valid = mask .& isfinite.(A_t) .& isfinite.(A_i)
     A_t_v = A_t[valid]
     A_i_v = A_i[valid]
-    H_v   = Float64.(glacier.H₀[valid])   # épaisseur de référence co-localisée avec chaque point
+    H_v   = Float64.(glacier.H₀[valid])   # reference thickness co-located with each point
 
     rmse = sqrt(mean((A_i_v .- A_t_v) .^ 2))
     bias = mean(A_i_v .- A_t_v)
@@ -1037,7 +1037,7 @@ function plot_scatter_A(
 
     lim = max(maximum(A_t_v), maximum(A_i_v)) * 1.05
 
-    # Formatteur de ticks en notation scientifique (sinon Makie affiche "0")
+    # Tick formatter in scientific notation (otherwise Makie shows "0")
     sci_fmt(values) = [Printf.@sprintf("%.1e", v) for v in values]
 
     fig = Figure(size = isnothing(figsize) ? (640, 520) : figsize)
@@ -1053,7 +1053,7 @@ function plot_scatter_A(
         xticklabelrotation = π/6,
     )
 
-    # Points colorés par H_ref pour voir si les mauvaises prédictions de A sont liées à l'épaisseur
+    # Points colored by H_ref to see whether bad A predictions are related to thickness
     hmin, hmax = extrema(H_v)
     sc = scatter!(ax, A_t_v, A_i_v,
         color      = H_v,
@@ -1062,7 +1062,7 @@ function plot_scatter_A(
         markersize = 5,
     )
 
-    # Ligne 1:1
+    # 1:1 line
     lines!(ax, [0, lim], [0, lim],
         color     = :black,
         linewidth = 1.5,
@@ -1070,7 +1070,7 @@ function plot_scatter_A(
         label     = "1:1",
     )
 
-    # Régression linéaire
+    # Linear regression
     A_mat = [ones(length(A_t_v)) A_t_v]
     p     = A_mat \ A_i_v
     lines!(ax, [0, lim], [p[1], p[1] + p[2]*lim],
@@ -1103,8 +1103,8 @@ function plot_residual_A_vs_H(
         glacier_name::String = inversion.glaciers[glacier_idx].rgi_id,
         figsize::Union{Nothing, Tuple{Int64, Int64}} = nothing,
         target::Symbol = :A,
-        H_thresh::Union{Nothing, Float64} = nothing,  # ex: 20.0 -> trace une ligne verticale repère
-        nbins::Int = 20,                              # nb de bins pour la courbe de tendance médiane
+        H_thresh::Union{Nothing, Float64} = nothing,  # e.g. 20.0 -> draws a vertical reference line
+        nbins::Int = 20,                              # number of bins for the median trend curve
 )
 
     A_ref = Vendr._target_value(prediction, glacier_idx, target; θ=nothing)
@@ -1137,12 +1137,12 @@ function plot_residual_A_vs_H(
 
     residual = abs.(A_i_v .- A_t_v)
 
-    # Pour l'échelle log en y, on retire les résidus exactement nuls (rares, mais log(0) = -Inf)
+    # For the log y-scale, drop residuals that are exactly zero (rare, but log(0) = -Inf)
     pos = residual .> 0
     H_plot   = H_v[pos]
     res_plot = residual[pos]
 
-    # --- Courbe de tendance : médiane du résidu par bin de H (bins linéaires) ---
+    # --- Trend curve: median residual per H bin (linear bins) ---
     hmin, hmax = extrema(H_plot)
     edges = range(hmin, hmax; length = nbins + 1)
     bin_centers = Float64[]
@@ -1168,25 +1168,25 @@ function plot_residual_A_vs_H(
         ytickformat = sci_fmt,
     )
 
-    # Nuage de points brut
+    # Raw scatter
     scatter!(ax, H_plot, res_plot,
         color      = (:steelblue, 0.25),
         markersize = 4,
         label      = "Pixels",
     )
 
-    # Tendance médiane par bin
+    # Median trend per bin
     lines!(ax, bin_centers, bin_medians,
         color     = :crimson,
         linewidth = 2.5,
-        label     = "Médiane (bins de H)",
+        label     = "Median (H bins)",
     )
     scatter!(ax, bin_centers, bin_medians,
         color      = :crimson,
         markersize = 7,
     )
 
-    # Ligne verticale de seuil, si fournie
+    # Vertical threshold line, if provided
     if !isnothing(H_thresh)
         vlines!(ax, [H_thresh], color = :black, linestyle = :dot, linewidth = 1.5,
             label = "H_thresh = $(H_thresh) m")

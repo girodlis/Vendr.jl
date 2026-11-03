@@ -32,7 +32,7 @@ function _target_value(
     
     # Detect if scalar or matrix
     is_scalar = ndims(cache_value) == 0
-    #TODO: pas gestion scalair vs matrix mais use eval law quand inversion && pas scalaire
+    #TODO: instead of handling scalar vs matrix here, evaluate the law when the inversion target is not scalar
     
     if is_scalar && θ === nothing
         return cache_value

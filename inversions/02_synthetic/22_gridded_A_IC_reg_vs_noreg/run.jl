@@ -11,7 +11,7 @@ campaign_root = dirname(abspath(@__FILE__))
 context = build_campaign_run_context(campaign_root)
 
 # ==================================================================
-# Inversion jointe de A (gridded) + conditions initiales (H₀)
+# Joint inversion of A (gridded) + initial conditions (H₀)
 # ==================================================================
 ic_initialization = :Farinotti19Random
 λ_IC = 1e-4
@@ -256,7 +256,7 @@ for (glacier_idx, rgi_id) in enumerate(context.campaign.rgi_ids)
     println("Saved: A_reg_vs_noreg_$(rgi_id).png")
 end
 
-# ============ Plots: conditions initiales H₀ (a priori vs vérité vs inversé) ============
+# ============ Plots: initial conditions H₀ (ground truth vs inverted) ============
 for (scenario_idx, scenario) in enumerate(context.scenarios)
     inversion = context.scenario_inversions[scenario_idx]
     prediction = context.scenario_predictions[scenario_idx]
@@ -279,22 +279,22 @@ for (scenario_idx, scenario) in enumerate(context.scenarios)
 
         fig = Figure(size = (1300, 400))
 
-        ax1 = Axis(fig[1, 1], aspect = DataAspect(), title = "H₀ vérité terrain")
+        ax1 = Axis(fig[1, 1], aspect = DataAspect(), title = "H₀ ground truth")
         hm1 = heatmap!(ax1, Sleipnir.reverseForHeatmap(H0_gt_masked, x, y),
             colormap = :Blues, colorrange = (0, hmax))
         Colorbar(fig[1, 2], hm1, label = "m")
 
-        ax2 = Axis(fig[1, 3], aspect = DataAspect(), title = "H₀ inversé")
+        ax2 = Axis(fig[1, 3], aspect = DataAspect(), title = "H₀ inverted")
         hm2 = heatmap!(ax2, Sleipnir.reverseForHeatmap(H0_inv_masked, x, y),
             colormap = :Blues, colorrange = (0, hmax))
         Colorbar(fig[1, 4], hm2, label = "m")
 
-        ax3 = Axis(fig[1, 5], aspect = DataAspect(), title = "diff H₀ (inversé − vérité)")
+        ax3 = Axis(fig[1, 5], aspect = DataAspect(), title = "diff H₀ (inverted − ground truth)")
         hm3 = heatmap!(ax3, Sleipnir.reverseForHeatmap(H0_diff, x, y),
             colormap = :RdBu, colorrange = (-dmax, dmax))
         Colorbar(fig[1, 6], hm3, label = "m")
 
-        fig[0, :] = Label(fig, "$(rgi_id) — scénario $(scenario.id)", fontsize = 14, font = :bold)
+        fig[0, :] = Label(fig, "$(rgi_id) — scenario $(scenario.id)", fontsize = 14, font = :bold)
 
         save(joinpath(context.results_dir, "ic_comparison_$(scenario.id)_$(rgi_id).png"), fig)
         println("Saved: ic_comparison_$(scenario.id)_$(rgi_id).png")

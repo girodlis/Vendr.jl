@@ -15,23 +15,23 @@ campaign_root = dirname(abspath(@__FILE__))
 context = build_campaign_run_context(campaign_root)
 
 # ==================================================================
-# Inversion jointe de A (gridded) + conditions initiales (H₀)
+# Joint inversion of A (gridded) + initial conditions (H₀)
 # ==================================================================
-# `build_inversion_model`/`run_campaign!` ne savent inverser que A : on
-# construit donc ici, scénario par scénario, un Model étendu avec un
-# régresseur supplémentaire `IC` (ODINN.InitialCondition), en réutilisant
-# les briques existantes de Vendr pour tout le reste (params, ground
-# truth, régresseur A gridded, sauvegarde des résultats, plots).
+# `build_inversion_model`/`run_campaign!` can only invert A, so here we
+# build, scenario by scenario, a Model extended with an additional `IC`
+# regressor (ODINN.InitialCondition), reusing the existing Vendr building
+# blocks for everything else (params, ground truth, gridded A regressor,
+# results saving, plots).
 
-# A priori pour H₀ : Farinotti19 + bruit gaussien corrélé spatialement.
-# Le H₀ de vérité terrain vient déjà de Farinotti19 (source par défaut),
-# donc partir de :Farinotti19 tel quel donnerait un a priori identique à
-# la vérité (test non pertinent) ; :Farinotti19Random perturbe ce champ
-# pour vérifier que l'inversion peut effectivement le retrouver.
+# Prior for H₀: Farinotti19 + spatially correlated Gaussian noise.
+# The ground-truth H₀ already comes from Farinotti19 (default source), so
+# starting from :Farinotti19 as is would give a prior identical to the
+# truth (meaningless test); :Farinotti19Random perturbs this field to check
+# that the inversion can actually recover it.
 ic_initialization = :Farinotti19Random
 
-# Poids de régularisation (Tikhonov) sur H₀, en plus de la régularisation
-# sur A déjà pilotée par scenario.regularization_weight.
+# Regularization weight (Tikhonov) on H₀, on top of the regularization
+# on A already controlled by scenario.regularization_weight.
 λ_IC = 1e-4
 
 function build_ic_loss(campaign::CampaignConfig, scenario::ScenarioConfig, λ_IC::Float64)
@@ -164,7 +164,7 @@ plot_relative_error_boxplot(
 )
 
 # ============ Plots Ground Truth + All Scenarios (A) ============
-# Labels adaptés pour mettre en avant la régularisation (A et H₀)
+# Labels adapted to highlight the regularization (A and H₀)
 scenario_labels = [
     if scenario.regularization_weight > 0.0
         "$(scenario_label(1, scenario)) | λ_A=$(scenario.regularization_weight) | λ_IC=$(λ_IC)"
@@ -188,7 +188,7 @@ for (glacier_idx, rgi_id) in enumerate(context.campaign.rgi_ids)
     println("Saved: all_scenarios_A_$(rgi_id).png")
 end
 
-# ============ Plots: conditions initiales H₀ (a priori vs vérité vs inversé) ============
+# ============ Plots: initial conditions H₀ (ground truth vs inverted) ============
 for (scenario_idx, scenario) in enumerate(context.scenarios)
     inversion = context.scenario_inversions[scenario_idx]
     prediction = context.scenario_predictions[scenario_idx]
@@ -211,22 +211,22 @@ for (scenario_idx, scenario) in enumerate(context.scenarios)
 
         fig = Figure(size = (1300, 400))
 
-        ax1 = Axis(fig[1, 1], aspect = DataAspect(), title = "H₀ vérité terrain")
+        ax1 = Axis(fig[1, 1], aspect = DataAspect(), title = "H₀ ground truth")
         hm1 = heatmap!(ax1, Sleipnir.reverseForHeatmap(H0_gt_masked, x, y),
             colormap = :Blues, colorrange = (0, hmax))
         Colorbar(fig[1, 2], hm1, label = "m")
 
-        ax2 = Axis(fig[1, 3], aspect = DataAspect(), title = "H₀ inversé")
+        ax2 = Axis(fig[1, 3], aspect = DataAspect(), title = "H₀ inverted")
         hm2 = heatmap!(ax2, Sleipnir.reverseForHeatmap(H0_inv_masked, x, y),
             colormap = :Blues, colorrange = (0, hmax))
         Colorbar(fig[1, 4], hm2, label = "m")
 
-        ax3 = Axis(fig[1, 5], aspect = DataAspect(), title = "diff H₀ (inversé − vérité)")
+        ax3 = Axis(fig[1, 5], aspect = DataAspect(), title = "diff H₀ (inverted − ground truth)")
         hm3 = heatmap!(ax3, Sleipnir.reverseForHeatmap(H0_diff, x, y),
             colormap = :RdBu, colorrange = (-dmax, dmax))
         Colorbar(fig[1, 6], hm3, label = "m")
 
-        fig[0, :] = Label(fig, "$(rgi_id) — scénario $(scenario.id)", fontsize = 14, font = :bold)
+        fig[0, :] = Label(fig, "$(rgi_id) — scenario $(scenario.id)", fontsize = 14, font = :bold)
 
         save(joinpath(context.results_dir, "ic_comparison_$(scenario.id)_$(rgi_id).png"), fig)
         println("Saved: ic_comparison_$(scenario.id)_$(rgi_id).png")

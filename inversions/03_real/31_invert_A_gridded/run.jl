@@ -110,7 +110,7 @@ write(joinpath(outdir, "git_commit.txt"), readchomp(`git -C $(@__DIR__) rev-pars
 
 norm2(x)    = sqrt(sum(abs2, x))
 A_UNIT      = 1e-17
-A_temperate = Huginn.polyA_PatersonCuffey()(0.0) # A(0°C) selon Cuffey & Paterson
+A_temperate = Huginn.polyA_PatersonCuffey()(0.0) # A(0°C) from Cuffey & Paterson
 
 function glacier_mask_for(H₀::AbstractMatrix, target_size::Tuple{Int, Int}; distance::Int = 1)
     size(H₀) == target_size && return Sleipnir.is_in_glacier(H₀, distance)
@@ -208,7 +208,7 @@ lines!(ax_loss, 1:length(losses), losses, color = :steelblue)
 
 save(joinpath(outdir, "loss_curve_discradj_millan22.png"), fig_loss)
 println("Saved: loss_curve_discradj_millan22.png")
-println("Loss — début=", losses[1], ", fin=", losses[end])
+println("Loss — start=", losses[1], ", end=", losses[end])
 
 ######################################
 ############# Per-glacier diagnostics & plots ##################
@@ -227,20 +227,20 @@ for (glacier_idx, rgi_id) in enumerate(rgi_ids)
     H₀_millan = glacier.H₀
 
     A_opt = Vendr._target_value(inversion, glacier_idx, :A; θ = θ_opt)
-    println("A optimisé (min/mean/max) : ", extrema(A_opt), " / ", sum(A_opt) / length(A_opt))
+    println("Optimized A (min/mean/max): ", extrema(A_opt), " / ", sum(A_opt) / length(A_opt))
 
     # ---- Gradient diagnostic: A vs IC ----
-    # H₀_inverted reste-t-il proche du prior parce que le signal de fit qui l'atteint est
-    # juste faible (H₀ n'influence V qu'indirectement, via un an d'intégration de la PDE,
-    # alors que A influence directement la diffusivité SIA) ? On compare les normes des
-    # deux blocs de gradient au fil de l'optimisation, stockées dans stats.∇θ_hist.
+    # Does H₀_inverted stay close to the prior because the fit signal reaching it is just
+    # weak (H₀ only affects V indirectly, through one year of PDE integration, whereas A
+    # directly drives the SIA diffusivity)? Compare the norms of the two gradient blocks
+    # along the optimization, stored in stats.∇θ_hist.
     ∇θ_hist      = inversion.results.stats.∇θ_hist
     grad_A_norm  = [norm2(g.A[glacier_id_sym]) for g in ∇θ_hist]
     grad_IC_norm = [norm2(g.IC[glacier_id_sym]) for g in ∇θ_hist]
 
-    println("Norme du gradient — A  : dernier=", grad_A_norm[end],  ", max=", maximum(grad_A_norm))
-    println("Norme du gradient — IC : dernier=", grad_IC_norm[end], ", max=", maximum(grad_IC_norm))
-    println("Ratio ‖∇IC‖/‖∇A‖ (dernier itér.) : ", grad_IC_norm[end] / grad_A_norm[end])
+    println("Gradient norm — A  : last=", grad_A_norm[end],  ", max=", maximum(grad_A_norm))
+    println("Gradient norm — IC : last=", grad_IC_norm[end], ", max=", maximum(grad_IC_norm))
+    println("Ratio ‖∇IC‖/‖∇A‖ (last iter.): ", grad_IC_norm[end] / grad_A_norm[end])
 
     fig_grad = Figure(size = (600, 400))
     ax_grad  = Axis(fig_grad[1, 1],
@@ -253,11 +253,11 @@ for (glacier_idx, rgi_id) in enumerate(rgi_ids)
     save(joinpath(outdir, "grad_norm_A_vs_IC_discradj_millan22_$(rgi_id).png"), fig_grad)
     println("Saved: grad_norm_A_vs_IC_discradj_millan22_$(rgi_id).png")
 
-    # ---- Check d'aliasing : ∇θ_hist / θ_hist stockent-ils des références au même buffer ? ----
-    # callback_diagnosis (ODINN/src/simulations/inversions/callback_utils.jl) fait
-    # `push!(stats.θ_hist, θ.u)` / `push!(stats.∇θ_hist, θ.grad)` sans `copy(...)`. Déjà
-    # vérifié une fois (résultat : pas d'aliasing), on garde le check ici par glacier
-    # au cas où le comportement diffère selon le batch.
+    # ---- Aliasing check: do ∇θ_hist / θ_hist store references to the same buffer? ----
+    # callback_diagnosis (ODINN/src/simulations/inversions/callback_utils.jl) does
+    # `push!(stats.θ_hist, θ.u)` / `push!(stats.∇θ_hist, θ.grad)` without `copy(...)`. Already
+    # checked once (result: no aliasing); the check is kept here per glacier in case the
+    # behaviour differs depending on the batch.
     θ_hist = inversion.results.stats.θ_hist
     println("Alias check — ∇θ_hist[1].A === ∇θ_hist[end].A : ",
         ∇θ_hist[1].A[glacier_id_sym] === ∇θ_hist[end].A[glacier_id_sym])
@@ -386,22 +386,22 @@ for (glacier_idx, rgi_id) in enumerate(rgi_ids)
             colormap = :RdBu, colorrange = (-spec.dmax, spec.dmax), unit_label = "diff ($(spec.unit))", colorbar_below = true)
     end
 
-    # ---- Plot 3: carte de A inversé ----
-    # A vit sur la grille "staggered" (nx-1, ny-1), un cran plus petite que H₀/V (nx, ny).
+    # ---- Plot 3: map of inverted A ----
+    # A lives on the "staggered" grid (nx-1, ny-1), one cell smaller than H₀/V (nx, ny).
     glacier_mask_A = glacier_mask_for(H₀_millan, size(A_opt))
     x_A = (results.x[1:end-1] .+ results.x[2:end]) ./ 2
     y_A = (results.y[1:end-1] .+ results.y[2:end]) ./ 2
 
-    # A est de l'ordre de 1e-17 : Makie/PlotUtils ne trouve pas de ticks "ronds" sur une
-    # plage aussi petite et n'affiche aucune valeur sur la colorbar. On réexprime donc A
-    # en unités de A_UNIT pour rester dans une plage lisible.
+    # A is of order 1e-17: Makie/PlotUtils finds no "round" ticks on such a small range
+    # and shows no value on the colorbar, so A is expressed in units of A_UNIT to keep
+    # a readable range.
     A_masked = ifelse.(glacier_mask_A, A_opt, NaN) ./ A_UNIT
 
     # ---- Summary stats for the report (A field, in units of A_UNIT) ----
     A_valid     = filter(isfinite, A_masked)
     A_high_frac = count(>(5.0), A_valid) / length(A_valid)
-    println("A optimisé (unités ×1e-17) — mean=", sum(A_valid) / length(A_valid),
-        ", fraction > 5e-17 : ", 100 * A_high_frac, "%")
+    println("Optimized A (units ×1e-17) — mean=", sum(A_valid) / length(A_valid),
+        ", fraction > 5e-17: ", 100 * A_high_frac, "%")
 
     real_data_stats[rgi_id] = (
         H0_mean_abs_diff = H0_mean_abs_diff, H0_p95_abs_diff = H0_p95_abs_diff,
@@ -422,7 +422,7 @@ for (glacier_idx, rgi_id) in enumerate(rgi_ids)
     save(joinpath(outdir, "map_A_inverted_reg_millan22_discradj_$(rgi_id).png"), fig_a)
     println("Saved: map_A_inverted_reg_millan22_discradj_$(rgi_id).png")
 
-    # ---- Plot 4: distribution de A inversé vs référence glace tempérée ----
+    # ---- Plot 4: distribution of inverted A vs temperate ice reference ----
     bar_color    = "#228BE6"  # RGB(34, 139, 230)
     temp_color   = "#F35424"  # RGB(243, 84, 36)
     millan_color = "#228B22"  # RGB(34, 139, 34), placeholder green, no exact RGB was given

@@ -61,7 +61,7 @@ inversion = Inversion(model, glaciers, params)
 run!(inversion)
 
 A_opt = only(Vendr._target_value(inversion, 1, :A; θ = inversion.results.stats.θ))
-println("A optimisé : ", A_opt)
+println("Optimized A: ", A_opt)
 
 ######################################
 ############# Diagnostics ############
@@ -71,7 +71,7 @@ results = inversion.results.simulation[1]
 θ_opt   = inversion.results.stats.θ
 inversion.cache = Sleipnir.init_cache(inversion.model, inversion, 1, θ_opt)
 
-# ← ajouter ceci : déclenche le callback law (A) qui est normalement appelé par l'ODE à t=0
+# Trigger the law (A) callback, which is normally called by the ODE at t=0
 Huginn.apply_all_callback_laws!(
     inversion.model.iceflow, inversion.cache.iceflow, inversion, 1, t1_vel, θ_opt)
 
@@ -98,12 +98,12 @@ hm_v1 = heatmap!(ax_v1, Sleipnir.reverseForHeatmap(V_millan, results.x, results.
     colormap = :viridis, colorrange = (0, vmax))
 Colorbar(fig_v[1, 2], hm_v1, label = "m/yr")
 
-ax_v2 = Axis(fig_v[1, 3], aspect = DataAspect(), title = "avg_V modèle (A inversés)")
+ax_v2 = Axis(fig_v[1, 3], aspect = DataAspect(), title = "avg_V model (inverted A)")
 hm_v2 = heatmap!(ax_v2, Sleipnir.reverseForHeatmap(avg_V, results.x, results.y),
     colormap = :viridis, colorrange = (0, vmax))
 Colorbar(fig_v[1, 4], hm_v2, label = "m/yr")
 
-ax_v3 = Axis(fig_v[1, 5], aspect = DataAspect(), title = "diff V (modèle − Millan22)")
+ax_v3 = Axis(fig_v[1, 5], aspect = DataAspect(), title = "diff V (model − Millan22)")
 hm_v3 = heatmap!(ax_v3, Sleipnir.reverseForHeatmap(V_diff, results.x, results.y),
     colormap = :RdBu, colorrange = (-dmax_V, dmax_V))
 Colorbar(fig_v[1, 6], hm_v3, label = "m/yr")

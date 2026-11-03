@@ -33,12 +33,12 @@ plot_relative_error_boxplot(
 )
 
 # ============ Plots Ground Truth + All Scenarios ============
-# Labels adaptés pour mettre en avant la régularisation
+# Labels adapted to highlight the regularization
 scenario_labels = [
     if scenario.regularization_weight > 0.0
         "$(scenario_label(1, scenario)) | λ=$(scenario.regularization_weight)"
     else
-        scenario_label(1, scenario)  # Fallback au label standard
+        scenario_label(1, scenario)  # Fallback to the standard label
     end
     for (i, scenario) in enumerate(context.scenarios)
 ]

@@ -87,13 +87,13 @@ run!(inversion)
 θ_opt = inversion.results.stats.θ
 
 outdir = @__DIR__
-println("Loss — début=", inversion.results.stats.losses[1], ", fin=", inversion.results.stats.losses[end])
+println("Loss — start=", inversion.results.stats.losses[1], ", end=", inversion.results.stats.losses[end])
 
-# ---- Le gradient atteint-il vraiment θ.IC, ou est-il structurellement nul ? ----
-# Test empirique direct (indépendant de toute lecture de code) : si ‖∇IC‖ est nul ou
-# NaN à CHAQUE itération, le gradient ne remonte pas jusqu'à H₀ (bug de câblage). S'il
-# est non nul mais petit devant ‖∇A‖, c'est un signal faible (couplage indirect H₀ → V
-# via l'intégration du forward), pas une rupture.
+# ---- Does the gradient actually reach θ.IC, or is it structurally zero? ----
+# Direct empirical test (independent of reading the code): if ‖∇IC‖ is zero or NaN at
+# EVERY iteration, the gradient does not propagate back to H₀ (wiring bug). If it is
+# non-zero but small compared to ‖∇A‖, it is a weak signal (indirect H₀ → V coupling
+# through the forward integration), not a break.
 norm2(x) = sqrt(sum(abs2, x))
 for (glacier_idx, rgi_id) in enumerate(rgi_ids)
     glacier_id_sym = Symbol("$(glacier_idx)")
@@ -104,12 +104,12 @@ for (glacier_idx, rgi_id) in enumerate(rgi_ids)
     n_zero_IC = count(iszero, grad_IC)
     n_nan_IC  = count(isnan, grad_IC)
 
-    println("--- $rgi_id : gradient A vs IC sur $(length(∇θ_hist)) itérations ---")
-    println("  ‖∇A‖  — première=", grad_A[1],  ", dernière=", grad_A[end],  ", max=", maximum(grad_A))
-    println("  ‖∇IC‖ — première=", grad_IC[1], ", dernière=", grad_IC[end], ", max=", maximum(grad_IC))
-    println("  ‖∇IC‖ nul  à $(n_zero_IC)/$(length(grad_IC)) itérations")
-    println("  ‖∇IC‖ NaN  à $(n_nan_IC)/$(length(grad_IC)) itérations")
-    println("  Ratio moyen ‖∇IC‖/‖∇A‖ : ", sum(grad_IC ./ grad_A) / length(grad_A))
+    println("--- $rgi_id: gradient A vs IC over $(length(∇θ_hist)) iterations ---")
+    println("  ‖∇A‖  — first=", grad_A[1],  ", last=", grad_A[end],  ", max=", maximum(grad_A))
+    println("  ‖∇IC‖ — first=", grad_IC[1], ", last=", grad_IC[end], ", max=", maximum(grad_IC))
+    println("  ‖∇IC‖ zero at $(n_zero_IC)/$(length(grad_IC)) iterations")
+    println("  ‖∇IC‖ NaN  at $(n_nan_IC)/$(length(grad_IC)) iterations")
+    println("  Mean ratio ‖∇IC‖/‖∇A‖: ", sum(grad_IC ./ grad_A) / length(grad_A))
 end
 
 # H₀ lives on the (nx, ny) grid; is_in_glacier needs a mask on that same grid — see
@@ -172,13 +172,13 @@ function place_image!(fig, row, col, path)
 end
 
 ######################################
-##### Évolution de H₀ (IC) au fil des itérations de l'inversion #####
+##### Evolution of H₀ (IC) along the inversion iterations #####
 ######################################
-# θ.IC (initialisé sur Farinotti19) est un paramètre optimisé au même titre que A :
-# callback_diagnosis pousse un snapshot de θ à CHAQUE itération dans stats.θ_hist
-# (ODINN/src/simulations/inversions/callback_utils.jl). Pour chaque snapshot, le champ
-# H₀ effectif est `evaluate_H₀(θ, glacier, filter, glacier_id)` (ODINN/.../InitialCondition_utils.jl),
-# qui applique le même filtre de positivité (:Zang1980 ici) que le forward run.
+# θ.IC (initialized from Farinotti19) is optimized just like A: callback_diagnosis
+# pushes a snapshot of θ at EVERY iteration into stats.θ_hist
+# (ODINN/src/simulations/inversions/callback_utils.jl). For each snapshot, the effective
+# H₀ field is `evaluate_H₀(θ, glacier, filter, glacier_id)` (ODINN/.../InitialCondition_utils.jl),
+# which applies the same positivity filter (:Zang1980 here) as the forward run.
 θ_hist   = inversion.results.stats.θ_hist
 n_adam   = params.hyper.epochs[1]
 ic_filter = params.UDE.initial_condition_filter

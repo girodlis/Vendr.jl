@@ -79,7 +79,7 @@ inversion = Inversion(model, glaciers, params)
 run!(inversion)
 
 A_opt = only(Vendr._target_value(inversion, 1, :A; θ = inversion.results.stats.θ))
-println("A optimisé : ", A_opt)
+println("Optimized A: ", A_opt)
 
 ######################################
 ######## Inversion of H0 ##############
@@ -143,12 +143,12 @@ hm1 = heatmap!(ax1, Sleipnir.reverseForHeatmap(V_millan, results.x, results.y),
     colormap = :viridis, colorrange = (0, vmax))
 Colorbar(fig[1, 2], hm1)
 
-ax2 = Axis(fig[1, 3], aspect = DataAspect(), title = "avg_V (modèle)")
+ax2 = Axis(fig[1, 3], aspect = DataAspect(), title = "avg_V (model)")
 hm2 = heatmap!(ax2, Sleipnir.reverseForHeatmap(avg_V, results.x, results.y),
     colormap = :viridis, colorrange = (0, vmax))
 Colorbar(fig[1, 4], hm2)
 
-ax3 = Axis(fig[1, 5], aspect = DataAspect(), title = "diff (modèle - Millan)")
+ax3 = Axis(fig[1, 5], aspect = DataAspect(), title = "diff (model - Millan)")
 hm3 = heatmap!(ax3, Sleipnir.reverseForHeatmap(diff, results.x, results.y),
     colormap = :RdBu, colorrange = (-dmax, dmax))
 Colorbar(fig[1, 6], hm3)

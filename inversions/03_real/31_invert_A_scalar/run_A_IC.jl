@@ -72,7 +72,7 @@ inversion = Inversion(model, glaciers, params)
 run!(inversion)
 
 A_opt = only(Vendr._target_value(inversion, 1, :A; θ = inversion.results.stats.θ))
-println("A optimisé : ", A_opt)
+println("Optimized A: ", A_opt)
 
 ######################################
 ############# Diagnostics ############
@@ -99,7 +99,7 @@ glacier_mask = H₀_millan .> 0
 
 outdir = @__DIR__
 
-# ---- Plot 1: IC check — H₀ Millan22 vs H₀ inversé ----
+# ---- Plot 1: IC check — H₀ Millan22 vs inverted H₀ ----
 H₀_diff = ifelse.(glacier_mask, H₀_inverted .- H₀_millan, NaN)
 hmax    = max(maximum(filter(isfinite, H₀_millan)), maximum(filter(isfinite, H₀_inverted)))
 dmax_H  = maximum(abs.(filter(isfinite, H₀_diff)))
@@ -111,12 +111,12 @@ hm_ic1 = heatmap!(ax_ic1, Sleipnir.reverseForHeatmap(H₀_millan, results.x, res
     colormap = :Blues, colorrange = (0, hmax))
 Colorbar(fig_ic[1, 2], hm_ic1, label = "m")
 
-ax_ic2 = Axis(fig_ic[1, 3], aspect = DataAspect(), title = "H₀ inversé")
+ax_ic2 = Axis(fig_ic[1, 3], aspect = DataAspect(), title = "H₀ inverted")
 hm_ic2 = heatmap!(ax_ic2, Sleipnir.reverseForHeatmap(H₀_inverted, results.x, results.y),
     colormap = :Blues, colorrange = (0, hmax))
 Colorbar(fig_ic[1, 4], hm_ic2, label = "m")
 
-ax_ic3 = Axis(fig_ic[1, 5], aspect = DataAspect(), title = "diff H₀ (inversé − Millan22)")
+ax_ic3 = Axis(fig_ic[1, 5], aspect = DataAspect(), title = "diff H₀ (inverted − Millan22)")
 hm_ic3 = heatmap!(ax_ic3, Sleipnir.reverseForHeatmap(H₀_diff, results.x, results.y),
     colormap = :RdBu, colorrange = (-dmax_H, dmax_H))
 Colorbar(fig_ic[1, 6], hm_ic3, label = "m")
@@ -136,12 +136,12 @@ hm_v1 = heatmap!(ax_v1, Sleipnir.reverseForHeatmap(V_millan, results.x, results.
     colormap = :viridis, colorrange = (0, vmax))
 Colorbar(fig_v[1, 2], hm_v1, label = "m/yr")
 
-ax_v2 = Axis(fig_v[1, 3], aspect = DataAspect(), title = "avg_V modèle (A + H₀ inversés)")
+ax_v2 = Axis(fig_v[1, 3], aspect = DataAspect(), title = "avg_V model (inverted A + H₀)")
 hm_v2 = heatmap!(ax_v2, Sleipnir.reverseForHeatmap(avg_V, results.x, results.y),
     colormap = :viridis, colorrange = (0, vmax))
 Colorbar(fig_v[1, 4], hm_v2, label = "m/yr")
 
-ax_v3 = Axis(fig_v[1, 5], aspect = DataAspect(), title = "diff V (modèle − Millan22)")
+ax_v3 = Axis(fig_v[1, 5], aspect = DataAspect(), title = "diff V (model − Millan22)")
 hm_v3 = heatmap!(ax_v3, Sleipnir.reverseForHeatmap(V_diff, results.x, results.y),
     colormap = :RdBu, colorrange = (-dmax_V, dmax_V))
 Colorbar(fig_v[1, 6], hm_v3, label = "m/yr")
